@@ -24,7 +24,7 @@ export function Sidebar({
   activeTab: string;
   setActiveTab: (tab: string) => void;
   language: "en" | "hi";
-}) ( { activeTab: string, setActiveTab: (tab: string) => void }) {
+}) {
   const { user, logout } = useAuth();
 
  const tabs = [

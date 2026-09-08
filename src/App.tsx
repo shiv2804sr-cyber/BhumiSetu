@@ -24,7 +24,16 @@ function MainApp() {
   const [selectedState, setSelectedState] = useState("All States");
   const [selectedDistrict, setSelectedDistrict] = useState("All Districts");
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [language, setLanguage] = useState<"en" | "hi">("en");
+  const [language, setLanguage] = useState<"en" | "hi">(() => {
+    const stored = localStorage.getItem("bhumisetu_language");
+    return (stored === "hi" || stored === "en") ? stored : "en";
+  });
+
+  // Persist language preference to localStorage
+  const handleLanguageChange = (newLang: "en" | "hi") => {
+    localStorage.setItem("bhumisetu_language", newLang);
+    setLanguage(newLang);
+  };
 
   return (
     <div className="min-h-screen bg-survey-paper text-registry-ink flex flex-col font-sans">
@@ -36,7 +45,7 @@ function MainApp() {
   setSelectedDistrict={setSelectedDistrict}
   onOpenLogin={() => setIsLoginModalOpen(true)}
   language={language}
-  setLanguage={setLanguage}
+  setLanguage={handleLanguageChange}
 />
       <div className="flex flex-1 overflow-hidden">
        <Sidebar

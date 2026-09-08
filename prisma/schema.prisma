@@ -1,0 +1,290 @@
+// Prisma schema for BhumiSetu - National Land Acquisition & Management System
+// Configured with SQLite for deterministic local development, easily switchable to PostgreSQL for production
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  fullName     String
+  designation  String
+  role         String    // SUPER_ADMIN, CENTRAL_MINISTRY, STATE_GOVERNMENT, DISTRICT_AUTHORITY, PIA, FIELD_OFFICER, VIEWER
+  department   String
+  state        String?
+  district     String?
+  phone        String?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  auditLogs    AuditLog[]
+  workflowActs WorkflowAction[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Project {
+  id                   String             @id // e.g. PRJ-2026-001
+  projectName          String
+  ministry             String
+  category             String             // Highway, Rail, Irrigation, Industrial Corridor, Urban Development
+  state                String
+  district             String
+  description          String?
+  estimatedArea        Float              // In Hectares
+  landProposed         Float              @default(0)
+  landNotified         Float              @default(0)
+  landAcquired         Float              @default(0)
+  status               String             // Draft, Submitted, Under Scrutiny, Approved, Sec 11 Notification, Sec 19 Declaration, Award, Compensation, Possession, R&R, Completed, Rejected
+  riskLevel            String             @default("Medium") // Low, Medium, High
+  riskScore            Int                @default(50)
+  riskFactors          String             @default("[]") // JSON string of factors
+  dateSubmitted        DateTime           @default(now())
+  startDate            DateTime?
+  expectedCompletionDate DateTime?
+  responsibleAuthority String?
+  implementingAgency   String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  milestones           ProjectMilestone[]
+  parcels              LandParcel[]
+  awards               Award[]
+  compensationRecords  CompensationRecord[]
+  rnrRecords           RnRRecord[]
+  documents            DocumentRecord[]
+  grievances           GrievanceRecord[]
+  alerts               SystemAlert[]
+  workflowActions      WorkflowAction[]
+
+  @@index([state])
+  @@index([district])
+  @@index([ministry])
+  @@index([status])
+}
+
+model ProjectMilestone {
+  id            String    @id @default(uuid())
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stageNumber   Int
+  name          String    // Notification, Declaration, Award, Compensation, Possession, R&R
+  status        String    // completed, current, pending
+  targetDate    String?
+  completedDate String?
+  remarks       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([projectId])
+}
+
+model LandParcel {
+  id                 String               @id @default(uuid())
+  ulpin              String               @unique // 14-digit Unique Land Parcel Identification Number
+  projectId          String
+  project            Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  state              String
+  district           String
+  village            String
+  surveyNumber       String
+  area               Float                // In Hectares
+  ownerName          String
+  ownerType          String               @default("Private") // Private, Government, Community, Forest
+  acquisitionStatus  String               @default("Proposed") // Proposed, Notification, Declaration, Award, Possession
+  notificationStatus String?
+  awardStatus        String?
+  compensationStatus String               @default("Pending")
+  possessionStatus   String               @default("Pending")
+  coordinates        String?              // GeoJSON Polygon / LineString coordinates JSON
+  geometryType       String               @default("Polygon") // Polygon, LineString, Point
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  compensation       CompensationRecord?
+  rnr                RnRRecord?
+
+  @@index([ulpin])
+  @@index([projectId])
+  @@index([state, district])
+  @@index([acquisitionStatus])
+}
+
+model Award {
+  id                 String    @id // e.g. AWD-2026-001
+  projectId          String
+  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectName        String
+  date               String
+  totalAmount        Float
+  beneficiariesCount Int
+  status             String    @default("Draft") // Draft, Under Review, Published
+  issuingAuthority   String
+  awardNoticeUrl     String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+}
+
+model CompensationRecord {
+  id              String      @id // e.g. COMP-101
+  ulpin           String      @unique
+  projectId       String
+  project         Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parcelId        String?     @unique
+  parcel          LandParcel? @relation(fields: [parcelId], references: [id], onDelete: SetNull)
+  ownerName       String
+  bankAccountMasked String?
+  ifscCode        String?
+  marketValue     Float
+  solatium        Float       // 100% under RFCTLARR Act 2013
+  totalAssessed   Float
+  amountDisbursed Float       @default(0)
+  disbursementDate String?
+  status          String      @default("Pending") // Pending, Processing DBT, Disbursed
+  paymentRef      String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([ulpin])
+  @@index([projectId])
+  @@index([status])
+}
+
+model RnRRecord {
+  id                 String      @id // e.g. RNR-001
+  ulpin              String      @unique
+  projectId          String
+  project            Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parcelId           String?     @unique
+  parcel             LandParcel? @relation(fields: [parcelId], references: [id], onDelete: SetNull)
+  familyHead         String
+  category           String      // Owner, Tenant, Agricultural Labourer
+  displacementStatus String      // Displaced, Affected Not Displaced
+  housingEntitlement Boolean     @default(false)
+  employmentEntitlement Boolean  @default(false)
+  annuityEntitlement Boolean     @default(false)
+  cashGrant          Float       @default(0)
+  resettlementSite   String?
+  overallStatus      String      @default("Pending") // Pending, In Progress, Settled
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([ulpin])
+  @@index([projectId])
+  @@index([overallStatus])
+}
+
+model DocumentRecord {
+  id          String    @id // e.g. DOC-8821
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  title       String
+  type        String    // Gazette, Report, Legal, Survey, Award Notice, SIA
+  version     String    @default("v1.0")
+  uploadedBy  String
+  uploadDate  String
+  filePath    String?
+  fileSize    String?
+  checksum    String    // SHA-256 checksum
+  status      String    @default("Verified") // Verified, Pending Signature, Rejected
+  remarks     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([type])
+  @@index([status])
+}
+
+model GrievanceRecord {
+  id             String    @id @default(uuid())
+  trackingId     String    @unique // e.g. G-2026-MH-4421
+  projectId      String?
+  project        Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  category       String    // Compensation Assessment, R&R Eligibility, Measurement Dispute, Boundary Verification
+  description    String
+  submittedBy    String
+  contactNumber  String?
+  submittedDate  String
+  status         String    @default("Open") // Open, In Progress, Resolved
+  assignedTo     String
+  priority       String    @default("Medium") // High, Medium, Low
+  resolutionNotes String?
+  resolvedDate   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([trackingId])
+  @@index([projectId])
+  @@index([status])
+  @@index([priority])
+}
+
+model SystemAlert {
+  id          String    @id // e.g. ALT-001
+  type        String    // SLA Breach, Lapse Risk, Approval Pending, Milestone Due
+  message     String
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectName String
+  timestamp   DateTime  @default(now())
+  severity    String    // Critical, Warning, Info
+  isRead      Boolean   @default(false)
+  targetRole  String?   // District LAO, State Government, Central Ministry
+  createdAt   DateTime  @default(now())
+
+  @@index([projectId])
+  @@index([severity])
+  @@index([isRead])
+}
+
+model WorkflowAction {
+  id             String    @id @default(uuid())
+  projectId      String
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stage          String
+  action         String    // SUBMIT, SCRUTINIZE, APPROVE, REJECT, NOTIFY, AWARD, DISBURSE, POSSESS, CLOSE
+  performedById  String?
+  performedBy    User?     @relation(fields: [performedById], references: [id], onDelete: SetNull)
+  performedByName String
+  userRole       String
+  previousStatus String?
+  newStatus      String
+  comments       String?
+  timestamp      DateTime  @default(now())
+
+  @@index([projectId])
+  @@index([timestamp])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userName  String?
+  userRole  String?
+  action    String   // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, APPROVE, REJECT, EXPORT, UPLOAD
+  entity    String   // Project, Parcel, Compensation, Award, RnR, Document, User, Grievance
+  entityId  String?
+  details   String?  // JSON string
+  ipAddress String?
+  userAgent String?
+  timestamp DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([action])
+  @@index([timestamp])
+}

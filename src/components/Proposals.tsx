@@ -1,27 +1,57 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Proposal } from "../types";
-import { Plus, ArrowLeft, Clock, CheckCircle2, AlertCircle, FileText } from "lucide-react";
+import { Plus, ArrowLeft, Clock, CheckCircle2, AlertCircle, FileText, Check, Ban } from "lucide-react";
 import { motion } from "motion/react";
+import { useAuth } from "../context/AuthContext";
 
-export function Proposals() {
+export function Proposals({ selectedState = "All States", selectedDistrict = "All Districts" }: { selectedState?: string; selectedDistrict?: string }) {
+  const { user } = useAuth();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [view, setView] = useState<"list" | "create">("list");
   const [isLoading, setIsLoading] = useState(true);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProposals();
-  }, []);
+  }, [selectedState, selectedDistrict]);
 
   const fetchProposals = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/proposals");
-      const data = await res.json();
-      setProposals(data);
+      const params = new URLSearchParams();
+      if (selectedState && selectedState !== "All States") params.append("state", selectedState);
+      if (selectedDistrict && selectedDistrict !== "All Districts") params.append("district", selectedDistrict);
+
+      const query = params.toString() ? `?${params.toString()}` : "";
+      const res = await fetch(`/api/v1/projects${query}`);
+      const json = await res.json();
+      const list = Array.isArray(json) ? json : json.data || [];
+      setProposals(list);
     } catch (err) {
       console.error("Failed to load proposals", err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleWorkflowAction = async (id: string, action: string) => {
+    try {
+      const res = await fetch(`/api/v1/projects/${id}/workflow`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("bhumisetu_token") || ""}`,
+        },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setActionMessage(`Project ${id}: ${data.message || 'Status updated'}`);
+        setTimeout(() => setActionMessage(null), 4000);
+        fetchProposals();
+      }
+    } catch (err) {
+      console.error("Failed to update status", err);
     }
   };
 
@@ -35,16 +65,24 @@ export function Proposals() {
       state: formData.get("state"),
       district: formData.get("district"),
       areaRequired: Number(formData.get("areaRequired")),
+      description: "",
     };
 
     try {
-      await fetch("/api/proposals", {
+      const res = await fetch("/api/v1/projects", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("bhumisetu_token") || ""}`,
+        },
         body: JSON.stringify(data),
       });
-      await fetchProposals();
-      setView("list");
+      if (res.ok) {
+        setActionMessage("Proposal submitted successfully to digital scrutiny pipeline.");
+        setTimeout(() => setActionMessage(null), 4000);
+        await fetchProposals();
+        setView("list");
+      }
     } catch (err) {
       console.error("Failed to submit proposal", err);
     }
@@ -96,6 +134,7 @@ export function Proposals() {
                   <option value="Ministry of Railways">Ministry of Railways</option>
                   <option value="MoHUA">Ministry of Housing & Urban Affairs</option>
                   <option value="MNRE">Ministry of New & Renewable Energy</option>
+                  <option value="DPIIT">Department for Promotion of Industry and Internal Trade</option>
                 </select>
               </div>
 
@@ -113,12 +152,18 @@ export function Proposals() {
 
               <div>
                 <label className="block text-sm font-medium text-registry-ink mb-1">Primary State</label>
-                <select name="state" required className="w-full px-4 py-2 border border-graticule-teal/30 focus:outline-none focus:border-tilled-earth focus:ring-1 focus:ring-tilled-earth bg-white">
+                <select 
+                  name="state" 
+                  required 
+                  defaultValue={selectedState !== "All States" ? selectedState : "Haryana"}
+                  className="w-full px-4 py-2 border border-graticule-teal/30 focus:outline-none focus:border-tilled-earth focus:ring-1 focus:ring-tilled-earth bg-white"
+                >
                   <option value="">Select State...</option>
-                  <option value="Uttar Pradesh">Uttar Pradesh</option>
                   <option value="Haryana">Haryana</option>
                   <option value="Maharashtra">Maharashtra</option>
-                  <option value="Karnataka">Karnataka</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Delhi">Delhi</option>
                 </select>
               </div>
 
@@ -128,8 +173,9 @@ export function Proposals() {
                   required
                   name="district"
                   type="text" 
+                  defaultValue={selectedDistrict !== "All Districts" ? selectedDistrict : ""}
                   className="w-full px-4 py-2 border border-graticule-teal/30 focus:outline-none focus:border-tilled-earth focus:ring-1 focus:ring-tilled-earth bg-survey-paper/50" 
-                  placeholder="District Name" 
+                  placeholder="District Name (e.g., Nuh, Pune)" 
                 />
               </div>
 
@@ -169,6 +215,13 @@ export function Proposals() {
 
   return (
     <div className="p-8 w-full">
+      {actionMessage && (
+        <div className="mb-6 p-4 bg-cultivated-green/10 border border-cultivated-green/30 text-cultivated-green font-medium text-sm rounded-sm flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5" />
+          {actionMessage}
+        </div>
+      )}
+
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-serif font-semibold text-registry-ink">Project Proposals</h2>
@@ -194,19 +247,20 @@ export function Proposals() {
                 <th className="px-6 py-4">Area (Ha)</th>
                 <th className="px-6 py-4">Delay Risk</th>
                 <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Workflow Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-graticule-teal/20">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-graticule-teal animate-pulse">
+                  <td colSpan={8} className="px-6 py-12 text-center text-graticule-teal animate-pulse">
                     Loading proposals...
                   </td>
                 </tr>
               ) : proposals.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-registry-ink/60">
-                    No proposals found. Create the first one to begin.
+                  <td colSpan={8} className="px-6 py-12 text-center text-registry-ink/60">
+                    No proposals found matching criteria. Create the first one to begin.
                   </td>
                 </tr>
               ) : (
@@ -216,7 +270,7 @@ export function Proposals() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
                     key={proposal.id} 
-                    className="hover:bg-graticule-teal/5 transition-colors cursor-pointer"
+                    className="hover:bg-graticule-teal/5 transition-colors"
                   >
                     <td className="px-6 py-4 font-mono text-xs text-graticule-teal">{proposal.id}</td>
                     <td className="px-6 py-4 font-medium text-registry-ink max-w-[250px] truncate" title={proposal.projectName}>
@@ -227,7 +281,7 @@ export function Proposals() {
                     <td className="px-6 py-4 font-mono text-registry-ink/80">{proposal.areaRequired.toFixed(2)}</td>
                     <td className="px-6 py-4">
                       {proposal.riskProfile ? (
-                        <div className="flex items-center gap-1.5" title={proposal.riskProfile.factors.join(", ")}>
+                        <div className="flex items-center gap-1.5" title={proposal.riskProfile.factors?.join(", ")}>
                           <div className={`w-2 h-2 rounded-full ${
                             proposal.riskProfile.level === 'High' ? 'bg-alluvium-red' :
                             proposal.riskProfile.level === 'Medium' ? 'bg-tilled-earth' :
@@ -256,6 +310,42 @@ export function Proposals() {
                         }`}>
                           {proposal.status}
                         </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {proposal.status === "Submitted" && (
+                          <button
+                            onClick={() => handleWorkflowAction(proposal.id, "SCRUTINIZE")}
+                            className="px-2 py-1 text-xs bg-tilled-earth/10 text-tilled-earth hover:bg-tilled-earth hover:text-white border border-tilled-earth/30 rounded-xs transition-colors"
+                            title="Scrutinize Proposal"
+                          >
+                            Scrutinize
+                          </button>
+                        )}
+                        {proposal.status === "Under Scrutiny" && (
+                          <>
+                            <button
+                              onClick={() => handleWorkflowAction(proposal.id, "APPROVE")}
+                              className="px-2 py-1 text-xs bg-cultivated-green/10 text-cultivated-green hover:bg-cultivated-green hover:text-white border border-cultivated-green/30 rounded-xs transition-colors flex items-center gap-1"
+                              title="Approve Proposal"
+                            >
+                              <Check className="w-3 h-3" /> Approve
+                            </button>
+                            <button
+                              onClick={() => handleWorkflowAction(proposal.id, "REJECT")}
+                              className="px-2 py-1 text-xs bg-alluvium-red/10 text-alluvium-red hover:bg-alluvium-red hover:text-white border border-alluvium-red/30 rounded-xs transition-colors flex items-center gap-1"
+                              title="Reject Proposal"
+                            >
+                              <Ban className="w-3 h-3" /> Reject
+                            </button>
+                          </>
+                        )}
+                        {proposal.status === "Approved" && (
+                          <span className="text-[11px] font-mono text-cultivated-green bg-cultivated-green/10 px-2 py-0.5 border border-cultivated-green/20 rounded-xs">
+                            Ready for Sec 11
+                          </span>
+                        )}
                       </div>
                     </td>
                   </motion.tr>

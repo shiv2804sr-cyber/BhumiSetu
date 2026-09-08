@@ -1,20 +1,57 @@
 import { useState, useEffect } from "react";
 import { RnRRecord } from "../types";
-import { Home, CheckCircle2, Clock } from "lucide-react";
+import { Home, CheckCircle2, Clock, Check, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
+import { useAuth } from "../context/AuthContext";
 
-export function RnR() {
+export function RnR({ selectedState = "All States", selectedDistrict = "All Districts" }: { selectedState?: string; selectedDistrict?: string }) {
+  const { user } = useAuth();
   const [records, setRecords] = useState<RnRRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/rnr")
-      .then((res) => res.json())
-      .then((data) => {
-        setRecords(data);
-        setIsLoading(false);
+    fetchRnR();
+  }, [selectedState, selectedDistrict]);
+
+  const fetchRnR = async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (selectedState && selectedState !== "All States") params.append("state", selectedState);
+      if (selectedDistrict && selectedDistrict !== "All Districts") params.append("district", selectedDistrict);
+
+      const query = params.toString() ? `?${params.toString()}` : "";
+      const res = await fetch(`/api/v1/rnr${query}`);
+      const json = await res.json();
+      const list = Array.isArray(json) ? json : json.data || [];
+      setRecords(list);
+    } catch (err) {
+      console.error("Failed to load R&R records", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/v1/rnr/${id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("bhumisetu_token") || ""}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
       });
-  }, []);
+      if (res.ok) {
+        setMessage(`R&R case ${id} marked as ${newStatus}`);
+        setTimeout(() => setMessage(null), 4000);
+        await fetchRnR();
+      }
+    } catch (err) {
+      console.error("Failed to update status", err);
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -25,13 +62,20 @@ export function RnR() {
 
   return (
     <div className="p-8 w-full">
+      {message && (
+        <div className="mb-6 p-4 bg-cultivated-green/10 border border-cultivated-green/30 text-cultivated-green font-medium text-sm rounded-sm flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5" />
+          {message}
+        </div>
+      )}
+
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-serif font-semibold text-registry-ink flex items-center gap-3">
             <Home className="w-8 h-8 text-tilled-earth" />
             Rehabilitation & Resettlement (R&R)
           </h2>
-          <p className="text-registry-ink/60 mt-1">Manage affected families register and track statutory entitlements.</p>
+          <p className="text-registry-ink/60 mt-1">Manage affected families register and track statutory entitlements under RFCTLARR Act.</p>
         </div>
       </div>
 
@@ -47,19 +91,20 @@ export function RnR() {
                 <th className="px-6 py-4">Displacement</th>
                 <th className="px-6 py-4">Entitlements</th>
                 <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-graticule-teal/20">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-graticule-teal animate-pulse">
+                  <td colSpan={8} className="px-6 py-12 text-center text-graticule-teal animate-pulse">
                     Loading R&R records...
                   </td>
                 </tr>
               ) : records.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-registry-ink/60">
-                    No records found.
+                  <td colSpan={8} className="px-6 py-12 text-center text-registry-ink/60">
+                    No records found matching criteria.
                   </td>
                 </tr>
               ) : (
@@ -69,7 +114,7 @@ export function RnR() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
                     key={record.id} 
-                    className="hover:bg-graticule-teal/5 transition-colors cursor-pointer"
+                    className="hover:bg-graticule-teal/5 transition-colors"
                   >
                     <td className="px-6 py-4 font-mono text-xs text-graticule-teal">{record.id}</td>
                     <td className="px-6 py-4 font-mono text-xs text-registry-ink/80">{record.ulpin}</td>
@@ -101,6 +146,18 @@ export function RnR() {
                           {record.overallStatus}
                         </span>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {record.overallStatus !== "Settled" ? (
+                        <button
+                          onClick={() => handleUpdateStatus(record.id, "Settled")}
+                          className="px-2.5 py-1 text-xs bg-cultivated-green/10 text-cultivated-green hover:bg-cultivated-green hover:text-white border border-cultivated-green/30 rounded-xs transition-colors inline-flex items-center gap-1 shadow-xs"
+                        >
+                          <Check className="w-3.5 h-3.5" /> Settle Claim
+                        </button>
+                      ) : (
+                        <span className="text-xs text-cultivated-green font-mono">Completed</span>
+                      )}
                     </td>
                   </motion.tr>
                 ))

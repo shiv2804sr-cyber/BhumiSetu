@@ -4,6 +4,7 @@
  */
 
 import { useState } from "react";
+import { AuthProvider } from "./context/AuthContext";
 import { Sidebar, TopNav } from "./components/Layout";
 import { KPILedger, WorkflowTracker, PredictiveRisk } from "./components/Dashboard";
 import { GISMap } from "./components/Map";
@@ -16,28 +17,38 @@ import { MapView } from "./components/MapView";
 import { Awards } from "./components/Awards";
 import { Reports } from "./components/Reports";
 import { Grievances } from "./components/Grievance";
+import { LoginModal } from "./components/LoginModal";
 
-export default function App() {
+function MainApp() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedState, setSelectedState] = useState("All States");
   const [selectedDistrict, setSelectedDistrict] = useState("All Districts");
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [language, setLanguage] = useState<"en" | "hi">("en");
 
   return (
     <div className="min-h-screen bg-survey-paper text-registry-ink flex flex-col font-sans">
-      <TopNav 
-        setActiveTab={setActiveTab} 
-        selectedState={selectedState}
-        setSelectedState={setSelectedState}
-        selectedDistrict={selectedDistrict}
-        setSelectedDistrict={setSelectedDistrict}
-      />
+  <TopNav
+  setActiveTab={setActiveTab}
+  selectedState={selectedState}
+  setSelectedState={setSelectedState}
+  selectedDistrict={selectedDistrict}
+  setSelectedDistrict={setSelectedDistrict}
+  onOpenLogin={() => setIsLoginModalOpen(true)}
+  language={language}
+  setLanguage={setLanguage}
+/>
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+       <Sidebar
+  activeTab={activeTab}
+  setActiveTab={setActiveTab}
+  language={language}
+/>
         
         <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
           {activeTab === "dashboard" && (
             <>
-              <KPILedger />
+              <KPILedger selectedState={selectedState} selectedDistrict={selectedDistrict} />
               <div className="flex-1 p-6 flex flex-col lg:flex-row gap-6">
                 <div className="flex-[2] min-h-[500px] lg:min-h-0 flex flex-col shadow-sm">
                   <div className="p-4 bg-white border-x border-t border-graticule-teal/30 font-serif font-semibold text-registry-ink flex justify-between items-center">
@@ -61,9 +72,9 @@ export default function App() {
             </>
           )}
 
-          {activeTab === "proposals" && <Proposals />}
-          {activeTab === "compensation" && <Compensation />}
-          {activeTab === "rnr" && <RnR />}
+          {activeTab === "proposals" && <Proposals selectedState={selectedState} selectedDistrict={selectedDistrict} />}
+          {activeTab === "compensation" && <Compensation selectedState={selectedState} selectedDistrict={selectedDistrict} />}
+          {activeTab === "rnr" && <RnR selectedState={selectedState} selectedDistrict={selectedDistrict} />}
           {activeTab === "documents" && <Documents />}
           {activeTab === "alerts" && <AlertsPanel />}
           {activeTab === "map" && <MapView selectedState={selectedState} selectedDistrict={selectedDistrict} />}
@@ -86,6 +97,16 @@ export default function App() {
           )}
         </main>
       </div>
+
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
   );
 }

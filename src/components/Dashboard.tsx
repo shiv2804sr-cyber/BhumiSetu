@@ -18,40 +18,40 @@ export function KPILedger({ selectedState = "All States", selectedDistrict = "Al
       .catch((err) => console.error("Failed to load KPIs", err));
   }, [selectedState, selectedDistrict]);
 
-  if (!kpis) return <div className="h-20 animate-pulse bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700 rounded-lg" />;
+  if (!kpis) return <div className="h-20 animate-pulse bg-soft-green rounded-lg" />;
 
   const metrics = [
-    { label: "Area Notified", value: kpis.areaNotified, bgColor: "bg-slate-800/60", borderColor: "border-emerald-500/40", textColor: "text-emerald-400", accentColor: "from-emerald-500/60 to-emerald-400/30" },
-    { label: "Area Acquired", value: kpis.areaAcquired, bgColor: "bg-slate-800/60", borderColor: "border-blue-500/40", textColor: "text-blue-400", accentColor: "from-blue-500/60 to-blue-400/30" },
-    { label: "Comp. Assessed", value: kpis.compensationAssessed, bgColor: "bg-slate-800/60", borderColor: "border-amber-500/40", textColor: "text-amber-400", accentColor: "from-amber-500/60 to-amber-400/30" },
-    { label: "Comp. Paid", value: kpis.compensationDisbursed, bgColor: "bg-slate-800/60", borderColor: "border-orange-500/40", textColor: "text-orange-400", accentColor: "from-orange-500/60 to-orange-400/30" },
-    { label: "Families Affected", value: kpis.familiesAffected, bgColor: "bg-slate-800/60", borderColor: "border-red-500/40", textColor: "text-red-400", accentColor: "from-red-500/60 to-red-400/30" },
-    { label: "R&R Settled", value: kpis.familiesRnR, bgColor: "bg-slate-800/60", borderColor: "border-green-500/40", textColor: "text-green-400", accentColor: "from-green-500/60 to-green-400/30" },
+    { label: "Area Notified", value: kpis.areaNotified, borderColor: "border-l-4 border-forest-light", accentBg: "bg-soft-green" },
+    { label: "Area Acquired", value: kpis.areaAcquired, borderColor: "border-l-4 border-graticule-teal", accentBg: "bg-soft-teal" },
+    { label: "Comp. Assessed", value: kpis.compensationAssessed, borderColor: "border-l-4 border-earth-accent", accentBg: "bg-amber-50" },
+    { label: "Comp. Paid", value: kpis.compensationDisbursed, borderColor: "border-l-4 border-graticule-teal", accentBg: "bg-soft-teal" },
+    { label: "Families Affected", value: kpis.familiesAffected, borderColor: "border-l-4 border-alluvium-red", accentBg: "bg-red-50" },
+    { label: "R&R Settled", value: kpis.familiesRnR, borderColor: "border-l-4 border-forest-light", accentBg: "bg-soft-green" },
   ];
 
   return (
-    <div className="flex flex-nowrap overflow-x-auto border-b border-slate-700/50 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-lg">
+    <div className="flex flex-nowrap overflow-x-auto border-b border-neutral-stone bg-cream-soft shadow-sm">
       {metrics.map((metric, i) => (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.08, duration: 0.4 }}
           key={metric.label}
-          className={`flex-1 min-w-[140px] p-5 hover:bg-slate-700/40 transition-all duration-300 cursor-pointer group border-r border-slate-700/30 ${metric.bgColor} backdrop-blur-sm`}
+          className={`flex-1 min-w-[140px] p-5 hover:bg-survey-paper transition-all duration-300 cursor-pointer group ${metric.borderColor} ${metric.accentBg} border-neutral-stone/30`}
           whileHover={{ y: -2 }}
         >
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-secondary-text mb-2">
             {metric.label}
           </div>
           
-          <div className={`text-2xl font-serif font-bold ${metric.textColor}`}>
+          <div className="text-2xl font-serif font-bold text-registry-ink">
             {metric.value}
           </div>
           
           <motion.div 
             initial={{ width: 0 }}
             whileHover={{ width: "1.5rem" }}
-            className={`h-0.5 bg-gradient-to-r ${metric.accentColor} mt-2 rounded-full`}
+            className={`h-0.5 bg-forest-light mt-2 rounded-full`}
           />
         </motion.div>
       ))}
@@ -82,53 +82,53 @@ export function PredictiveRisk() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 border border-slate-700/50 shadow-lg rounded-lg h-full flex flex-col mt-6 hover:shadow-xl transition-shadow duration-300 backdrop-blur-sm"
+      className="bg-cream-soft p-6 border border-neutral-stone shadow-sm rounded-lg h-full flex flex-col mt-6 hover:shadow-md transition-shadow duration-300"
     >
       <div className="mb-6">
-        <h3 className="font-serif text-xl font-semibold text-slate-100">Predictive Delay Risk</h3>
-        <p className="text-xs text-slate-400 font-medium mt-1">RFCTLARR statistical forecast</p>
+        <h3 className="font-serif text-lg font-semibold text-registry-ink">Predictive Delay Risk</h3>
+        <p className="text-xs text-secondary-text font-medium mt-1">RFCTLARR statistical forecast</p>
       </div>
       
       <div className="flex-1 flex flex-col justify-center gap-4">
         {/* HIGH RISK */}
         <motion.div 
           whileHover={{ y: -2 }}
-          className="flex gap-4 items-center p-4 rounded-lg bg-red-900/20 border border-red-600/40 hover:border-red-600/60 hover:bg-red-900/30 transition-all duration-300 backdrop-blur-sm"
+          className="flex gap-4 items-center p-4 rounded-lg bg-red-50 border-l-4 border-alluvium-red border border-neutral-stone/40 hover:shadow-sm transition-all duration-300"
         >
-          <div className="w-12 h-12 shrink-0 rounded-lg bg-red-900/40 border border-red-600/50 flex items-center justify-center">
-            <span className="text-sm font-bold text-red-400">{summary.high}</span>
+          <div className="w-12 h-12 shrink-0 rounded-lg bg-red-100 border border-alluvium-red/30 flex items-center justify-center">
+            <span className="text-sm font-bold text-alluvium-red">{summary.high}</span>
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-red-300 text-sm">High Delay Risk</h4>
-            <p className="text-xs text-red-400/80 mt-0.5">Requires immediate action</p>
+            <h4 className="font-semibold text-registry-ink text-sm">High Delay Risk</h4>
+            <p className="text-xs text-secondary-text mt-0.5">Requires immediate action</p>
           </div>
         </motion.div>
         
         {/* MEDIUM RISK */}
         <motion.div 
           whileHover={{ y: -2 }}
-          className="flex gap-4 items-center p-4 rounded-lg bg-amber-900/20 border border-amber-600/40 hover:border-amber-600/60 hover:bg-amber-900/30 transition-all duration-300 backdrop-blur-sm"
+          className="flex gap-4 items-center p-4 rounded-lg bg-amber-50 border-l-4 border-earth-accent border border-neutral-stone/40 hover:shadow-sm transition-all duration-300"
         >
-          <div className="w-12 h-12 shrink-0 rounded-lg bg-amber-900/40 border border-amber-600/50 flex items-center justify-center">
-            <span className="text-sm font-bold text-amber-400">{summary.medium}</span>
+          <div className="w-12 h-12 shrink-0 rounded-lg bg-amber-100 border border-earth-accent/30 flex items-center justify-center">
+            <span className="text-sm font-bold text-earth-accent">{summary.medium}</span>
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-amber-300 text-sm">Medium Risk</h4>
-            <p className="text-xs text-amber-400/80 mt-0.5">Monitor closely</p>
+            <h4 className="font-semibold text-registry-ink text-sm">Medium Risk</h4>
+            <p className="text-xs text-secondary-text mt-0.5">Monitor closely</p>
           </div>
         </motion.div>
 
         {/* LOW RISK */}
         <motion.div 
           whileHover={{ y: -2 }}
-          className="flex gap-4 items-center p-4 rounded-lg bg-green-900/20 border border-green-600/40 hover:border-green-600/60 hover:bg-green-900/30 transition-all duration-300 backdrop-blur-sm"
+          className="flex gap-4 items-center p-4 rounded-lg bg-soft-green border-l-4 border-forest-light border border-neutral-stone/40 hover:shadow-sm transition-all duration-300"
         >
-          <div className="w-12 h-12 shrink-0 rounded-lg bg-green-900/40 border border-green-600/50 flex items-center justify-center">
-            <span className="text-sm font-bold text-green-400">{summary.low}</span>
+          <div className="w-12 h-12 shrink-0 rounded-lg bg-green-100 border border-forest-light/30 flex items-center justify-center">
+            <span className="text-sm font-bold text-forest-light">{summary.low}</span>
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-green-300 text-sm">Low Risk / On Schedule</h4>
-            <p className="text-xs text-green-400/80 mt-0.5">On track</p>
+            <h4 className="font-semibold text-registry-ink text-sm">Low Risk / On Schedule</h4>
+            <p className="text-xs text-secondary-text mt-0.5">On track</p>
           </div>
         </motion.div>
       </div>
@@ -169,16 +169,16 @@ export function WorkflowTracker() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 border border-slate-700/50 shadow-lg rounded-lg h-full flex flex-col hover:shadow-xl transition-shadow duration-300 backdrop-blur-sm"
+      className="bg-cream-soft p-6 border border-neutral-stone shadow-sm rounded-lg h-full flex flex-col hover:shadow-md transition-shadow duration-300"
     >
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h3 className="font-serif text-xl font-semibold text-slate-100">Statutory Lifecycle</h3>
-          <p className="text-xs text-slate-400 font-medium mt-1">Delhi-Mumbai Exp. (PRJ-2026-001)</p>
+          <h3 className="font-serif text-lg font-semibold text-registry-ink">Statutory Lifecycle</h3>
+          <p className="text-xs text-secondary-text font-medium mt-1">Delhi-Mumbai Exp. (PRJ-2026-001)</p>
         </div>
         <motion.div 
           whileHover={{ scale: 1.05 }}
-          className="px-3 py-1.5 bg-green-900/30 text-green-400 border border-green-600/50 text-[10px] font-semibold rounded-md flex items-center gap-1.5 shadow-sm backdrop-blur-sm"
+          className="px-3 py-1.5 bg-soft-green text-forest-light border border-forest-light/40 text-[10px] font-semibold rounded-md flex items-center gap-1.5 shadow-sm"
         >
           <CheckCircle2 className="w-3.5 h-3.5" />
           Compliant
@@ -197,42 +197,42 @@ export function WorkflowTracker() {
             {/* Connecting line */}
             {i !== stages.length - 1 && (
               <div className={`absolute left-3.5 top-8 bottom-0 w-0.5 ${
-                stage.status === "completed" ? "bg-green-600/50" :
-                stage.status === "current" ? "bg-amber-600/50" :
-                "bg-slate-600/30"
+                stage.status === "completed" ? "bg-forest-light/50" :
+                stage.status === "current" ? "bg-earth-accent/50" :
+                "bg-neutral-stone/40"
               } -translate-x-1/2`}
               />
             )}
             
             <div className="relative z-10">
               {stage.status === "completed" ? (
-                <div className="p-1 bg-green-900/30 rounded-full">
-                  <CheckCircle2 className="w-6 h-6 text-green-400" />
+                <div className="p-1 bg-soft-green rounded-full">
+                  <CheckCircle2 className="w-6 h-6 text-forest-light" />
                 </div>
               ) : stage.status === "current" ? (
                 <motion.div 
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="w-7 h-7 rounded-full border-2 border-amber-500 flex items-center justify-center bg-amber-900/30">
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                  className="w-7 h-7 rounded-full border-2 border-earth-accent flex items-center justify-center bg-amber-50">
+                  <div className="w-2.5 h-2.5 rounded-full bg-earth-accent"></div>
                 </motion.div>
               ) : (
-                <Circle className="w-7 h-7 text-slate-600" />
+                <Circle className="w-7 h-7 text-neutral-stone/50" />
               )}
             </div>
             
             <div className="flex-1 pt-0.5">
               <div className={`text-sm font-semibold ${
-                stage.status === "pending" ? "text-slate-500" : 
-                stage.status === "completed" ? "text-green-400" : 
-                "text-amber-400"
+                stage.status === "pending" ? "text-secondary-text" : 
+                stage.status === "completed" ? "text-forest-light" : 
+                "text-earth-accent"
               }`}>
                 {stage.name}
               </div>
-              <div className={`text-xs mt-1 ${
-                stage.status === "current" ? "text-amber-400/80 font-medium" : 
-                stage.status === "completed" ? "text-green-400/70" : 
-                "text-slate-500"
+              <div className={`text-xs mt-1 font-medium ${
+                stage.status === "current" ? "text-earth-accent" : 
+                stage.status === "completed" ? "text-forest-light/70" : 
+                "text-secondary-text"
               }`}>
                 {stage.date}
               </div>

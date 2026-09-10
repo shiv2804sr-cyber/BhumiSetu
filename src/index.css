@@ -1,19 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  --color-registry-ink: #0F1F35;
-  --color-survey-paper: #F9F8F5;
+  --color-registry-ink: #19302A;
+  --color-survey-paper: #F3F6F4;
   --color-tilled-earth: #8B5A2B;
-  --color-cultivated-green: #1B4D2E;
+  --color-cultivated-green: #155B45;
   --color-alluvium-red: #A63828;
-  --color-graticule-teal: #4A6B66;
+  --color-graticule-teal: #2B8177;
   
-  --color-forest-dark: #0D3B2F;
-  --color-forest-light: #2D6A4F;
-  --color-earth-accent: #C9915C;
-  --color-amber-gold: #D4A574;
-  --color-cream-soft: #FAF8F3;
-  --color-neutral-stone: #E8E5E0;
+  --color-forest-dark: #142B3A;
+  --color-forest-light: #155B45;
+  --color-earth-accent: #C79A3B;
+  --color-amber-gold: #C79A3B;
+  --color-cream-soft: #FFFFFF;
+  --color-neutral-stone: #D8E1DD;
+  --color-secondary-text: #66756F;
+  
+  --color-soft-green: #E8F1EC;
+  --color-soft-teal: #E8F3F1;
   
   --font-serif: "IBM Plex Serif", serif;
   --font-sans: "IBM Plex Sans", sans-serif;

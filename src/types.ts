@@ -1,116 +1,139 @@
+// src/types.ts
+
 export interface KPI {
-  areaNotified: number;
-  areaAcquired: number;
-  compensationAssessed: number;
-  compensationDisbursed: number;
-  familiesAffected: number;
-  familiesRnR: number;
-}
-
-export interface ParcelProperties {
   id: string;
-  ulpin: string;
-  status: string;
-  owner: string;
-  area: number;
-}
-
-export interface RiskProfile {
-  level: 'High' | 'Medium' | 'Low';
-  score: number;
-  factors: string[];
-}
-
-export interface Proposal {
-  id: string;
-  projectName: string;
-  ministry: string;
-  category: string;
-  state: string;
-  district: string;
-  status: 'Draft' | 'Submitted' | 'Under Scrutiny' | 'Approved' | 'Rejected';
-  dateSubmitted: string;
-  areaRequired: number;
-  riskProfile?: RiskProfile;
+  title: string;
+  value: string | number;
+  unit?: string;
+  change?: string | number;
+  trend?: "up" | "down" | "neutral";
+  description?: string;
+  icon?: string;
+  color?: string;
+  [key: string]: any;
 }
 
 export interface Alert {
   id: string;
-  type: 'SLA Breach' | 'Lapse Risk' | 'Approval Pending' | 'Milestone Due';
-  message: string;
-  projectId: string;
-  projectName: string;
-  timestamp: string;
-  severity: 'Critical' | 'Warning' | 'Info';
-  isRead: boolean;
+  title: string;
+  message?: string;
+  description?: string;
+  type?: string;
+  severity?: "low" | "medium" | "high" | "critical" | string;
+  status?: string;
+  read?: boolean;
+  createdAt?: string;
+  date?: string;
+  time?: string;
+  [key: string]: any;
 }
 
 export interface CompensationRecord {
   id: string;
-  ulpin: string;
-  ownerName: string;
-  marketValue: number;
-  solatium: number;
-  totalAssessed: number;
-  amountDisbursed: number;
-  disbursementDate: string | null;
-  status: 'Pending' | 'Processing DBT' | 'Disbursed';
-}
-
-export interface RnRRecord {
-  id: string;
-  ulpin: string;
-  familyHead: string;
-  category: 'Owner' | 'Tenant' | 'Agricultural Labourer';
-  displacementStatus: 'Displaced' | 'Affected Not Displaced';
-  entitlements: {
-    housing: boolean;
-    employment: boolean;
-    annuity: boolean;
-  };
-  overallStatus: 'Pending' | 'In Progress' | 'Settled';
+  projectId?: string;
+  projectName?: string;
+  landParcelId?: string;
+  landownerName?: string;
+  ownerName?: string;
+  amount?: number;
+  compensationAmount?: number;
+  status?: string;
+  paymentStatus?: string;
+  paymentDate?: string;
+  dueDate?: string;
+  village?: string;
+  district?: string;
+  state?: string;
+  [key: string]: any;
 }
 
 export interface DocumentRecord {
   id: string;
-  title: string;
-  type: string;
-  version: string;
-  uploadedBy: string;
-  uploadDate: string;
-  checksum: string;
-  status: 'Verified' | 'Pending Signature';
-}
-
-export interface AwardRecord {
-  id: string;
-  projectId: string;
-  projectName: string;
-  date: string;
-  totalAmount: number;
-  beneficiariesCount: number;
-  status: 'Draft' | 'Under Review' | 'Published';
-  issuingAuthority: string;
-}
-
-export interface ReportRecord {
-  id: string;
-  title: string;
-  type: string;
-  generatedDate: string;
-  generatedBy: string;
-  format: string;
-  size: string;
+  name?: string;
+  documentName?: string;
+  type?: string;
+  category?: string;
+  status?: string;
+  uploadedBy?: string;
+  uploadedAt?: string;
+  verifiedBy?: string;
+  verifiedAt?: string;
+  projectId?: string;
+  projectName?: string;
+  [key: string]: any;
 }
 
 export interface GrievanceRecord {
   id: string;
-  trackingId: string;
-  category: string;
-  description: string;
-  submittedBy: string;
-  submittedDate: string;
-  status: 'Open' | 'In Progress' | 'Resolved';
-  assignedTo: string;
-  priority: 'High' | 'Medium' | 'Low';
+  title?: string;
+  subject?: string;
+  description?: string;
+  category?: string;
+  status?: string;
+  priority?: string;
+  complainantName?: string;
+  applicantName?: string;
+  submittedBy?: string;
+  submittedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  projectId?: string;
+  projectName?: string;
+  district?: string;
+  state?: string;
+  [key: string]: any;
+}
+
+export interface Proposal {
+  id: string;
+  title?: string;
+  name?: string;
+  projectName?: string;
+  projectId?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  submittedBy?: string;
+  submittedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  amount?: number;
+  estimatedCost?: number;
+  district?: string;
+  state?: string;
+  [key: string]: any;
+}
+
+export interface ReportRecord {
+  id: string;
+  name?: string;
+  title?: string;
+  type?: string;
+  category?: string;
+  status?: string;
+  generatedBy?: string;
+  generatedAt?: string;
+  createdAt?: string;
+  projectId?: string;
+  projectName?: string;
+  [key: string]: any;
+}
+
+export interface RnRRecord {
+  id: string;
+  projectId?: string;
+  projectName?: string;
+  landownerName?: string;
+  beneficiaryName?: string;
+  village?: string;
+  district?: string;
+  state?: string;
+  packageAmount?: number;
+  amount?: number;
+  status?: string;
+  settlementStatus?: string;
+  paymentStatus?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
 }

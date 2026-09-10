@@ -288,3 +288,15 @@ model AuditLog {
   @@index([action])
   @@index([timestamp])
 }
+model OtpVerification {
+  id         String   @id @default(uuid())
+  identifier String
+  otpHash    String
+  expiresAt  DateTime
+  attempts   Int      @default(0)
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([identifier])
+  @@index([expiresAt])
+}

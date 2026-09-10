@@ -174,7 +174,12 @@ export function TopNav({
     "Haryana": ["All Districts", "Nuh", "Gurugram", "Faridabad", "Rohtak", "Hisar", "Ambala"],
     "Uttar Pradesh": ["All Districts", "Lucknow", "Kanpur", "Agra", "Varanasi", "Noida", "Meerut"],
     "Maharashtra": ["All Districts", "Pune", "Mumbai", "Nashik", "Nagpur", "Thane"],
-    "Tamil Nadu": ["All Districts", "Chennai", "Kanchipuram", "Coimbatore", "Madurai"]
+    "Tamil Nadu": ["All Districts", "Chennai", "Kanchipuram", "Coimbatore", "Madurai"],
+    "Karnataka": ["All Districts", "Bangalore", "Mysore", "Belgaum", "Mangalore", "Hubli", "Tumkur"],
+    "Madhya Pradesh": ["All Districts", "Indore", "Bhopal", "Jabalpur", "Gwalior", "Ujjain", "Sagar"],
+    "Rajasthan": ["All Districts", "Jaipur", "Jodhpur", "Udaipur", "Ajmer", "Bikaner", "Kota"],
+    "Jharkhand": ["All Districts", "Ranchi", "Dhanbad", "Giridih", "Bokaro", "Hazaribagh", "Deoghar"],
+    "Bihar": ["All Districts", "Patna", "Gaya", "Muzaffarpur", "Darbhanga", "Bhagalpur", "Madhubani"],
   };
 
   const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

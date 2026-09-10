@@ -1,10 +1,10 @@
 export interface KPI {
-  areaNotified: string;
-  areaAcquired: string;
-  compensationAssessed: string;
-  compensationDisbursed: string;
-  familiesAffected: string;
-  familiesRnR: string;
+  areaNotified: number;
+  areaAcquired: number;
+  compensationAssessed: number;
+  compensationDisbursed: number;
+  familiesAffected: number;
+  familiesRnR: number;
 }
 
 export interface ParcelProperties {
@@ -44,7 +44,6 @@ export interface Alert {
   severity: 'Critical' | 'Warning' | 'Info';
   isRead: boolean;
 }
-
 
 export interface CompensationRecord {
   id: string;

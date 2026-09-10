@@ -21,12 +21,12 @@ export function KPILedger({ selectedState = "All States", selectedDistrict = "Al
   if (!kpis) return <div className="h-20 animate-pulse bg-card-primary rounded-lg card-shadow" />;
 
   const metrics = [
-    { label: "Area Notified", value: kpis.areaNotified, borderColor: "border-l-4 border-forest-light", accentBg: "bg-soft-green" },
-    { label: "Area Acquired", value: kpis.areaAcquired, borderColor: "border-l-4 border-graticule-teal", accentBg: "bg-soft-teal" },
-    { label: "Comp. Assessed", value: kpis.compensationAssessed, borderColor: "border-l-4 border-earth-accent", accentBg: "bg-amber-50" },
-    { label: "Comp. Paid", value: kpis.compensationDisbursed, borderColor: "border-l-4 border-graticule-teal", accentBg: "bg-soft-teal" },
-    { label: "Families Affected", value: kpis.familiesAffected, borderColor: "border-l-4 border-alluvium-red", accentBg: "bg-red-50" },
-    { label: "R&R Settled", value: kpis.familiesRnR, borderColor: "border-l-4 border-forest-light", accentBg: "bg-soft-green" },
+    { label: "Area Notified", value: kpis.areaNotified, bgColor: "bg-[#E8F3ED]", bottomBorder: "border-b-2 border-forest-light/40" },
+    { label: "Area Acquired", value: kpis.areaAcquired, bgColor: "bg-[#E7F4F2]", bottomBorder: "border-b-2 border-graticule-teal/40" },
+    { label: "Comp. Assessed", value: kpis.compensationAssessed, bgColor: "bg-[#FFF5DE]", bottomBorder: "border-b-2 border-earth-accent/40" },
+    { label: "Comp. Paid", value: kpis.compensationDisbursed, bgColor: "bg-[#EAF2FA]", bottomBorder: "border-b-2 border-blue-500/40" },
+    { label: "Families Affected", value: kpis.familiesAffected, bgColor: "bg-[#F9EEEE]", bottomBorder: "border-b-2 border-red-400/40" },
+    { label: "R&R Settled", value: kpis.familiesRnR, bgColor: "bg-[#EEF3F0]", bottomBorder: "border-b-2 border-forest-light/40" },
   ];
 
   return (
@@ -37,7 +37,7 @@ export function KPILedger({ selectedState = "All States", selectedDistrict = "Al
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.08, duration: 0.4 }}
           key={metric.label}
-          className={`flex-1 min-w-[140px] p-5 hover:bg-white transition-all duration-300 cursor-pointer group ${metric.borderColor} border-b border-neutral-stone/10`}
+          className={`flex-1 min-w-[140px] p-5 hover:opacity-90 transition-all duration-300 cursor-pointer group ${metric.bgColor} ${metric.bottomBorder}`}
           whileHover={{ y: -2 }}
         >
           <div className="text-[10px] font-semibold uppercase tracking-wider text-secondary-text mb-2">
@@ -59,6 +59,7 @@ export function KPILedger({ selectedState = "All States", selectedDistrict = "Al
   );
 }
 
+// ...existing code...
 export function PredictiveRisk() {
   const [summary, setSummary] = useState<{ high: number; medium: number; low: number }>({
     high: 1,
@@ -136,6 +137,7 @@ export function PredictiveRisk() {
   );
 }
 
+// ...existing code...
 export function WorkflowTracker() {
   const [stages, setStages] = useState([
     { id: 1, name: "Section 11 Notification", status: "completed", date: "12 Oct 2025" },

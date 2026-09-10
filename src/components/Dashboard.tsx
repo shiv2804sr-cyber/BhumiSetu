@@ -18,7 +18,7 @@ export function KPILedger({ selectedState = "All States", selectedDistrict = "Al
       .catch((err) => console.error("Failed to load KPIs", err));
   }, [selectedState, selectedDistrict]);
 
-  if (!kpis) return <div className="h-20 animate-pulse bg-soft-green rounded-lg" />;
+  if (!kpis) return <div className="h-20 animate-pulse bg-card-primary rounded-lg card-shadow" />;
 
   const metrics = [
     { label: "Area Notified", value: kpis.areaNotified, borderColor: "border-l-4 border-forest-light", accentBg: "bg-soft-green" },
@@ -30,21 +30,21 @@ export function KPILedger({ selectedState = "All States", selectedDistrict = "Al
   ];
 
   return (
-    <div className="flex flex-nowrap overflow-x-auto border-b border-neutral-stone bg-cream-soft shadow-sm">
+    <div className="flex flex-nowrap overflow-x-auto border-b border-neutral-stone/20 bg-card-primary card-shadow rounded-lg">
       {metrics.map((metric, i) => (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.08, duration: 0.4 }}
           key={metric.label}
-          className={`flex-1 min-w-[140px] p-5 hover:bg-survey-paper transition-all duration-300 cursor-pointer group ${metric.borderColor} ${metric.accentBg} border-neutral-stone/30`}
+          className={`flex-1 min-w-[140px] p-5 hover:bg-white transition-all duration-300 cursor-pointer group ${metric.borderColor} border-b border-neutral-stone/10`}
           whileHover={{ y: -2 }}
         >
           <div className="text-[10px] font-semibold uppercase tracking-wider text-secondary-text mb-2">
             {metric.label}
           </div>
           
-          <div className="text-2xl font-serif font-bold text-registry-ink">
+          <div className="text-2xl font-serif font-bold text-heading-dark">
             {metric.value}
           </div>
           
@@ -82,10 +82,10 @@ export function PredictiveRisk() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-cream-soft p-6 border border-neutral-stone shadow-sm rounded-lg h-full flex flex-col mt-6 hover:shadow-md transition-shadow duration-300"
+      className="bg-card-info p-6 border border-card-accent-blue rounded-lg h-full flex flex-col mt-6 hover:shadow-md transition-shadow duration-300 card-shadow"
     >
-      <div className="mb-6">
-        <h3 className="font-serif text-lg font-semibold text-registry-ink">Predictive Delay Risk</h3>
+      <div className="mb-6 pb-4 border-b border-neutral-stone/20">
+        <h3 className="font-serif text-lg font-semibold text-heading-dark">Predictive Delay Risk</h3>
         <p className="text-xs text-secondary-text font-medium mt-1">RFCTLARR statistical forecast</p>
       </div>
       
@@ -93,13 +93,13 @@ export function PredictiveRisk() {
         {/* HIGH RISK */}
         <motion.div 
           whileHover={{ y: -2 }}
-          className="flex gap-4 items-center p-4 rounded-lg bg-red-50 border-l-4 border-alluvium-red border border-neutral-stone/40 hover:shadow-sm transition-all duration-300"
+          className="flex gap-4 items-center p-4 rounded-lg bg-red-50 border-l-4 border-alluvium-red border border-neutral-stone/15 hover:shadow-sm transition-all duration-300"
         >
-          <div className="w-12 h-12 shrink-0 rounded-lg bg-red-100 border border-alluvium-red/30 flex items-center justify-center">
+          <div className="w-12 h-12 shrink-0 rounded-lg bg-red-100/60 border border-alluvium-red/30 flex items-center justify-center">
             <span className="text-sm font-bold text-alluvium-red">{summary.high}</span>
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-registry-ink text-sm">High Delay Risk</h4>
+            <h4 className="font-semibold text-heading-dark text-sm">High Delay Risk</h4>
             <p className="text-xs text-secondary-text mt-0.5">Requires immediate action</p>
           </div>
         </motion.div>
@@ -107,13 +107,13 @@ export function PredictiveRisk() {
         {/* MEDIUM RISK */}
         <motion.div 
           whileHover={{ y: -2 }}
-          className="flex gap-4 items-center p-4 rounded-lg bg-amber-50 border-l-4 border-earth-accent border border-neutral-stone/40 hover:shadow-sm transition-all duration-300"
+          className="flex gap-4 items-center p-4 rounded-lg bg-amber-50 border-l-4 border-earth-accent border border-neutral-stone/15 hover:shadow-sm transition-all duration-300"
         >
-          <div className="w-12 h-12 shrink-0 rounded-lg bg-amber-100 border border-earth-accent/30 flex items-center justify-center">
+          <div className="w-12 h-12 shrink-0 rounded-lg bg-amber-100/60 border border-earth-accent/30 flex items-center justify-center">
             <span className="text-sm font-bold text-earth-accent">{summary.medium}</span>
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-registry-ink text-sm">Medium Risk</h4>
+            <h4 className="font-semibold text-heading-dark text-sm">Medium Risk</h4>
             <p className="text-xs text-secondary-text mt-0.5">Monitor closely</p>
           </div>
         </motion.div>
@@ -121,13 +121,13 @@ export function PredictiveRisk() {
         {/* LOW RISK */}
         <motion.div 
           whileHover={{ y: -2 }}
-          className="flex gap-4 items-center p-4 rounded-lg bg-soft-green border-l-4 border-forest-light border border-neutral-stone/40 hover:shadow-sm transition-all duration-300"
+          className="flex gap-4 items-center p-4 rounded-lg bg-soft-green border-l-4 border-forest-light border border-neutral-stone/15 hover:shadow-sm transition-all duration-300"
         >
-          <div className="w-12 h-12 shrink-0 rounded-lg bg-green-100 border border-forest-light/30 flex items-center justify-center">
+          <div className="w-12 h-12 shrink-0 rounded-lg bg-green-100/60 border border-forest-light/30 flex items-center justify-center">
             <span className="text-sm font-bold text-forest-light">{summary.low}</span>
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-registry-ink text-sm">Low Risk / On Schedule</h4>
+            <h4 className="font-semibold text-heading-dark text-sm">Low Risk / On Schedule</h4>
             <p className="text-xs text-secondary-text mt-0.5">On track</p>
           </div>
         </motion.div>
@@ -169,16 +169,16 @@ export function WorkflowTracker() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="bg-cream-soft p-6 border border-neutral-stone shadow-sm rounded-lg h-full flex flex-col hover:shadow-md transition-shadow duration-300"
+      className="bg-card-lifecycle p-6 border-l-4 border-graticule-teal border border-card-accent-teal rounded-lg h-full flex flex-col hover:shadow-md transition-shadow duration-300 card-shadow"
     >
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 pb-4 border-b border-neutral-stone/20">
         <div>
-          <h3 className="font-serif text-lg font-semibold text-registry-ink">Statutory Lifecycle</h3>
+          <h3 className="font-serif text-lg font-semibold text-heading-dark">Statutory Lifecycle</h3>
           <p className="text-xs text-secondary-text font-medium mt-1">Delhi-Mumbai Exp. (PRJ-2026-001)</p>
         </div>
         <motion.div 
           whileHover={{ scale: 1.05 }}
-          className="px-3 py-1.5 bg-soft-green text-forest-light border border-forest-light/40 text-[10px] font-semibold rounded-md flex items-center gap-1.5 shadow-sm"
+          className="px-3 py-1.5 bg-badge-green-bg text-badge-green-text border border-forest-light/30 text-[10px] font-semibold rounded-md flex items-center gap-1.5 shadow-sm"
         >
           <CheckCircle2 className="w-3.5 h-3.5" />
           Compliant
@@ -197,27 +197,27 @@ export function WorkflowTracker() {
             {/* Connecting line */}
             {i !== stages.length - 1 && (
               <div className={`absolute left-3.5 top-8 bottom-0 w-0.5 ${
-                stage.status === "completed" ? "bg-forest-light/50" :
-                stage.status === "current" ? "bg-earth-accent/50" :
-                "bg-neutral-stone/40"
+                stage.status === "completed" ? "bg-forest-light/40" :
+                stage.status === "current" ? "bg-earth-accent/40" :
+                "bg-neutral-stone/25"
               } -translate-x-1/2`}
               />
             )}
             
             <div className="relative z-10">
               {stage.status === "completed" ? (
-                <div className="p-1 bg-soft-green rounded-full">
+                <div className="p-1 bg-badge-green-bg rounded-full">
                   <CheckCircle2 className="w-6 h-6 text-forest-light" />
                 </div>
               ) : stage.status === "current" ? (
                 <motion.div 
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="w-7 h-7 rounded-full border-2 border-earth-accent flex items-center justify-center bg-amber-50">
+                  className="w-7 h-7 rounded-full border-2 border-earth-accent flex items-center justify-center bg-badge-gold-bg">
                   <div className="w-2.5 h-2.5 rounded-full bg-earth-accent"></div>
                 </motion.div>
               ) : (
-                <Circle className="w-7 h-7 text-neutral-stone/50" />
+                <Circle className="w-7 h-7 text-neutral-stone/40" />
               )}
             </div>
             
@@ -230,9 +230,9 @@ export function WorkflowTracker() {
                 {stage.name}
               </div>
               <div className={`text-xs mt-1 font-medium ${
-                stage.status === "current" ? "text-earth-accent" : 
+                stage.status === "current" ? "text-earth-accent/80" : 
                 stage.status === "completed" ? "text-forest-light/70" : 
-                "text-secondary-text"
+                "text-secondary-text/70"
               }`}>
                 {stage.date}
               </div>

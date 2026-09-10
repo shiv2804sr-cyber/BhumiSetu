@@ -1,12 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-registry-ink: #10233F;
-  --color-survey-paper: #F2F4F0;
-  --color-tilled-earth: #A8672E;
-  --color-cultivated-green: #2F6B3A;
-  --color-alluvium-red: #B4392C;
-  --color-graticule-teal: #5E7B78;
+  --color-registry-ink: #0F1F35;
+  --color-survey-paper: #F9F8F5;
+  --color-tilled-earth: #8B5A2B;
+  --color-cultivated-green: #1B4D2E;
+  --color-alluvium-red: #A63828;
+  --color-graticule-teal: #4A6B66;
+  
+  --color-forest-dark: #0D3B2F;
+  --color-forest-light: #2D6A4F;
+  --color-earth-accent: #C9915C;
+  --color-amber-gold: #D4A574;
+  --color-cream-soft: #FAF8F3;
+  --color-neutral-stone: #E8E5E0;
   
   --font-serif: "IBM Plex Serif", serif;
   --font-sans: "IBM Plex Sans", sans-serif;
@@ -20,5 +27,13 @@
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif font-semibold;
+  }
+  
+  button {
+    @apply transition-colors duration-200;
+  }
+  
+  input, textarea, select {
+    @apply transition-colors duration-200;
   }
 }

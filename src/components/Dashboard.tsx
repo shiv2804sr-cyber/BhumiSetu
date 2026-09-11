@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { KPI } from "../types";
 import { motion } from "motion/react";
 import { CheckCircle2, Circle } from "lucide-react";
 
 /* =========================================================
-   BHOOMISETU — UNIQUE STATE / DISTRICT DEMO DATA
+   BHOOMISETU — TYPES
    ========================================================= */
+
+type Language = "en" | "hi";
 
 type DistrictKPI = {
   areaNotified: number;
@@ -18,13 +19,10 @@ type DistrictKPI = {
 
 type StateData = Record<string, Record<string, DistrictKPI>>;
 
-/*
- * Every district has a UNIQUE seed.
- * This guarantees different numbers for every district.
- *
- * These district names exactly match the State/District
- * selector used in TopNav.
- */
+/* =========================================================
+   STATE / DISTRICT DEMO DATA
+   ========================================================= */
+
 const DISTRICT_SEEDS: Record<string, Record<string, number>> = {
   Delhi: {
     "New Delhi": 11,
@@ -113,19 +111,15 @@ const DISTRICT_SEEDS: Record<string, Record<string, number>> = {
   },
 };
 
-/*
- * Create deterministic and unique KPI data.
- *
- * Rules:
- * Area Acquired < Area Notified
- * Compensation Paid < Compensation Assessed
- * R&R Settled < Families Affected
- */
+/* =========================================================
+   CREATE DEMO KPI DATA
+   ========================================================= */
+
 function createDistrictKPI(seed: number): DistrictKPI {
   const areaNotified = 700 + seed * 37;
 
   const acquisitionRate =
-    0.60 + ((seed % 10) * 0.025);
+    0.60 + (seed % 10) * 0.025;
 
   const areaAcquired = Math.round(
     areaNotified * acquisitionRate
@@ -136,7 +130,7 @@ function createDistrictKPI(seed: number): DistrictKPI {
     seed * 4_750_000;
 
   const paidRate =
-    0.62 + ((seed % 9) * 0.025);
+    0.62 + (seed % 9) * 0.025;
 
   const compensationDisbursed = Math.round(
     compensationAssessed * paidRate
@@ -147,7 +141,7 @@ function createDistrictKPI(seed: number): DistrictKPI {
     seed * 23;
 
   const rnrRate =
-    0.55 + ((seed % 8) * 0.04);
+    0.55 + (seed % 8) * 0.04;
 
   const familiesRnR = Math.round(
     familiesAffected * rnrRate
@@ -163,27 +157,25 @@ function createDistrictKPI(seed: number): DistrictKPI {
   };
 }
 
-/*
- * Build the complete mock dataset.
- */
-const MOCK_KPI_DATA: StateData = Object.fromEntries(
-  Object.entries(DISTRICT_SEEDS).map(
-    ([state, districts]) => [
-      state,
-      Object.fromEntries(
-        Object.entries(districts).map(
-          ([district, seed]) => [
-            district,
-            createDistrictKPI(seed),
-          ]
-        )
-      ),
-    ]
-  )
-);
+const MOCK_KPI_DATA: StateData =
+  Object.fromEntries(
+    Object.entries(DISTRICT_SEEDS).map(
+      ([state, districts]) => [
+        state,
+        Object.fromEntries(
+          Object.entries(districts).map(
+            ([district, seed]) => [
+              district,
+              createDistrictKPI(seed),
+            ]
+          )
+        ),
+      ]
+    )
+  );
 
 /* =========================================================
-   KPI CALCULATION HELPERS
+   KPI HELPERS
    ========================================================= */
 
 function emptyKPI(): DistrictKPI {
@@ -228,19 +220,12 @@ function addKPI(
   };
 }
 
-/*
- * Exact State + District calculation.
- */
 function calculateKPI(
   selectedState: string,
   selectedDistrict: string
 ): DistrictKPI {
+  /* SPECIFIC DISTRICT */
 
-  /*
-   * -------------------------------------------------------
-   * SPECIFIC DISTRICT
-   * -------------------------------------------------------
-   */
   if (
     selectedState !== "All States" &&
     selectedDistrict !== "All Districts"
@@ -262,11 +247,8 @@ function calculateKPI(
     return districtData;
   }
 
-  /*
-   * -------------------------------------------------------
-   * SPECIFIC STATE — ALL DISTRICTS
-   * -------------------------------------------------------
-   */
+  /* SPECIFIC STATE — ALL DISTRICTS */
+
   if (
     selectedState !== "All States" &&
     selectedDistrict === "All Districts"
@@ -285,11 +267,8 @@ function calculateKPI(
     );
   }
 
-  /*
-   * -------------------------------------------------------
-   * ALL STATES — ALL DISTRICTS
-   * -------------------------------------------------------
-   */
+  /* ALL STATES — ALL DISTRICTS */
+
   return Object.values(MOCK_KPI_DATA)
     .flatMap((state) =>
       Object.values(state)
@@ -311,17 +290,28 @@ function formatNumber(value: number): string {
   ).format(value);
 }
 
-function formatRupees(value: number): string {
+function formatRupees(
+  value: number,
+  language: Language
+): string {
   if (value >= 10_000_000) {
     return `₹${(
       value / 10_000_000
-    ).toFixed(1)} Cr`;
+    ).toFixed(1)} ${
+      language === "hi"
+        ? "करोड़"
+        : "Cr"
+    }`;
   }
 
   if (value >= 100_000) {
     return `₹${(
       value / 100_000
-    ).toFixed(1)} L`;
+    ).toFixed(1)} ${
+      language === "hi"
+        ? "लाख"
+        : "L"
+    }`;
   }
 
   return `₹${formatNumber(value)}`;
@@ -334,18 +324,12 @@ function formatRupees(value: number): string {
 export function KPILedger({
   selectedState = "All States",
   selectedDistrict = "All Districts",
+  language = "en",
 }: {
   selectedState?: string;
   selectedDistrict?: string;
+  language?: Language;
 }) {
-
-  /*
-   * KPI recalculates whenever State or District changes.
-   *
-   * NO API CALL HERE.
-   *
-   * This guarantees that every demo district has data.
-   */
   const kpis = useMemo(() => {
     return calculateKPI(
       selectedState,
@@ -358,61 +342,107 @@ export function KPILedger({
 
   const metrics = [
     {
-      label: "Area Notified",
+      label:
+        language === "hi"
+          ? "अधिसूचित क्षेत्र"
+          : "Area Notified",
+
       value: `${formatNumber(
         kpis.areaNotified
-      )} Ha`,
+      )} ${
+        language === "hi"
+          ? "हेक्टेयर"
+          : "Ha"
+      }`,
+
       bgColor: "bg-[#E8F3ED]",
+
       bottomBorder:
         "border-b-2 border-forest-light/40",
     },
 
     {
-      label: "Area Acquired",
+      label:
+        language === "hi"
+          ? "अधिग्रहित क्षेत्र"
+          : "Area Acquired",
+
       value: `${formatNumber(
         kpis.areaAcquired
-      )} Ha`,
+      )} ${
+        language === "hi"
+          ? "हेक्टेयर"
+          : "Ha"
+      }`,
+
       bgColor: "bg-[#E7F4F2]",
+
       bottomBorder:
         "border-b-2 border-graticule-teal/40",
     },
 
     {
-      label: "Comp. Assessed",
+      label:
+        language === "hi"
+          ? "मुआवज़ा आकलित"
+          : "Comp. Assessed",
+
       value: formatRupees(
-        kpis.compensationAssessed
+        kpis.compensationAssessed,
+        language
       ),
+
       bgColor: "bg-[#FFF5DE]",
+
       bottomBorder:
         "border-b-2 border-earth-accent/40",
     },
 
     {
-      label: "Comp. Paid",
+      label:
+        language === "hi"
+          ? "मुआवज़ा भुगतान"
+          : "Comp. Paid",
+
       value: formatRupees(
-        kpis.compensationDisbursed
+        kpis.compensationDisbursed,
+        language
       ),
+
       bgColor: "bg-[#EAF2FA]",
+
       bottomBorder:
         "border-b-2 border-blue-500/40",
     },
 
     {
-      label: "Families Affected",
+      label:
+        language === "hi"
+          ? "प्रभावित परिवार"
+          : "Families Affected",
+
       value: formatNumber(
         kpis.familiesAffected
       ),
+
       bgColor: "bg-[#F9EEEE]",
+
       bottomBorder:
         "border-b-2 border-red-400/40",
     },
 
     {
-      label: "R&R Settled",
+      label:
+        language === "hi"
+          ? "R&R निपटान"
+          : "R&R Settled",
+
       value: formatNumber(
         kpis.familiesRnR
       ),
+
       bgColor: "bg-[#EEF3F0]",
+
       bottomBorder:
         "border-b-2 border-forest-light/40",
     },
@@ -420,7 +450,6 @@ export function KPILedger({
 
   return (
     <div className="flex flex-nowrap overflow-x-auto border-b border-neutral-stone/20 bg-card-primary card-shadow rounded-lg">
-
       {metrics.map(
         (metric, i) => (
           <motion.div
@@ -453,7 +482,6 @@ export function KPILedger({
               y: -2,
             }}
           >
-
             <div className="text-[10px] font-semibold uppercase tracking-wider text-secondary-text mb-2">
               {metric.label}
             </div>
@@ -471,11 +499,9 @@ export function KPILedger({
               }}
               className="h-0.5 bg-forest-light mt-2 rounded-full"
             />
-
           </motion.div>
         )
       )}
-
     </div>
   );
 }
@@ -484,8 +510,11 @@ export function KPILedger({
    PREDICTIVE RISK
    ========================================================= */
 
-export function PredictiveRisk() {
-
+export function PredictiveRisk({
+  language = "en",
+}: {
+  language?: Language;
+}) {
   const [summary, setSummary] =
     useState<{
       high: number;
@@ -498,7 +527,6 @@ export function PredictiveRisk() {
     });
 
   useEffect(() => {
-
     fetch(
       "/api/v1/dashboard/summary"
     )
@@ -506,7 +534,6 @@ export function PredictiveRisk() {
         res.json()
       )
       .then((resData) => {
-
         if (
           resData.data?.riskDistribution
         ) {
@@ -515,10 +542,8 @@ export function PredictiveRisk() {
               .riskDistribution
           );
         }
-
       })
       .catch(() => {});
-
   }, []);
 
   return (
@@ -536,17 +561,20 @@ export function PredictiveRisk() {
       }}
       className="bg-card-info p-6 border border-card-accent-blue rounded-lg h-full flex flex-col mt-6 hover:shadow-md transition-shadow duration-300 card-shadow"
     >
+      {/* Header */}
 
       <div className="mb-6 pb-4 border-b border-neutral-stone/20">
-
         <h3 className="font-serif text-lg font-semibold text-heading-dark">
-          Predictive Delay Risk
+          {language === "hi"
+            ? "पूर्वानुमानित विलंब जोखिम"
+            : "Predictive Delay Risk"}
         </h3>
 
         <p className="text-xs text-secondary-text font-medium mt-1">
-          RFCTLARR statistical forecast
+          {language === "hi"
+            ? "RFCTLARR सांख्यिकीय पूर्वानुमान"
+            : "RFCTLARR statistical forecast"}
         </p>
-
       </div>
 
       <div className="flex-1 flex flex-col justify-center gap-4">
@@ -559,27 +587,25 @@ export function PredictiveRisk() {
           }}
           className="flex gap-4 items-center p-4 rounded-lg bg-red-50 border-l-4 border-alluvium-red border border-neutral-stone/15 hover:shadow-sm transition-all duration-300"
         >
-
           <div className="w-12 h-12 shrink-0 rounded-lg bg-red-100/60 border border-alluvium-red/30 flex items-center justify-center">
-
             <span className="text-sm font-bold text-alluvium-red">
               {summary.high}
             </span>
-
           </div>
 
           <div className="flex-1">
-
             <h4 className="font-semibold text-heading-dark text-sm">
-              High Delay Risk
+              {language === "hi"
+                ? "उच्च विलंब जोखिम"
+                : "High Delay Risk"}
             </h4>
 
             <p className="text-xs text-secondary-text mt-0.5">
-              Requires immediate action
+              {language === "hi"
+                ? "तत्काल कार्रवाई आवश्यक"
+                : "Requires immediate action"}
             </p>
-
           </div>
-
         </motion.div>
 
         {/* MEDIUM RISK */}
@@ -590,27 +616,25 @@ export function PredictiveRisk() {
           }}
           className="flex gap-4 items-center p-4 rounded-lg bg-amber-50 border-l-4 border-earth-accent border border-neutral-stone/15 hover:shadow-sm transition-all duration-300"
         >
-
           <div className="w-12 h-12 shrink-0 rounded-lg bg-amber-100/60 border border-earth-accent/30 flex items-center justify-center">
-
             <span className="text-sm font-bold text-earth-accent">
               {summary.medium}
             </span>
-
           </div>
 
           <div className="flex-1">
-
             <h4 className="font-semibold text-heading-dark text-sm">
-              Medium Risk
+              {language === "hi"
+                ? "मध्यम जोखिम"
+                : "Medium Risk"}
             </h4>
 
             <p className="text-xs text-secondary-text mt-0.5">
-              Monitor closely
+              {language === "hi"
+                ? "नज़दीकी निगरानी रखें"
+                : "Monitor closely"}
             </p>
-
           </div>
-
         </motion.div>
 
         {/* LOW RISK */}
@@ -621,32 +645,401 @@ export function PredictiveRisk() {
           }}
           className="flex gap-4 items-center p-4 rounded-lg bg-soft-green border-l-4 border-forest-light border border-neutral-stone/15 hover:shadow-sm transition-all duration-300"
         >
-
           <div className="w-12 h-12 shrink-0 rounded-lg bg-green-100/60 border border-forest-light/30 flex items-center justify-center">
-
             <span className="text-sm font-bold text-forest-light">
               {summary.low}
             </span>
-
           </div>
 
           <div className="flex-1">
-
             <h4 className="font-semibold text-heading-dark text-sm">
-              Low Risk / On Schedule
+              {language === "hi"
+                ? "कम जोखिम / समयानुसार"
+                : "Low Risk / On Schedule"}
             </h4>
 
             <p className="text-xs text-secondary-text mt-0.5">
-              On track
+              {language === "hi"
+                ? "कार्य प्रगति पर है"
+                : "On track"}
             </p>
-
           </div>
-
         </motion.div>
 
       </div>
-
     </motion.div>
+  );
+}
+
+/* =========================================================
+   WORKFLOW TRANSLATION
+   ========================================================= */
+
+function translateStageName(
+  name: string,
+  language: Language
+): string {
+  if (language === "en") {
+    return name;
+  }
+
+  const normalizedName =
+    name.trim();
+
+  const translations: Record<
+    string,
+    string
+  > = {
+    "Section 11 Notification":
+      "धारा 11 अधिसूचना",
+
+    "Section 11":
+      "धारा 11",
+
+    "Section 19 Declaration":
+      "धारा 19 घोषणा",
+
+    "Section 19":
+      "धारा 19",
+
+    "Section 23 Award":
+      "धारा 23 पुरस्कार",
+
+    "Section 23 Award Declaration":
+      "धारा 23 पुरस्कार घोषणा",
+
+    "Section 23":
+      "धारा 23 पुरस्कार",
+
+    "Award Declaration":
+      "पुरस्कार घोषणा",
+
+    "PFMS Direct Benefit Transfer":
+      "PFMS प्रत्यक्ष लाभ अंतरण",
+
+    "Direct Benefit Transfer (DBT)":
+      "प्रत्यक्ष लाभ अंतरण (DBT)",
+
+    "Direct Benefit Transfer":
+      "प्रत्यक्ष लाभ अंतरण",
+
+    "Section 38 Possession":
+      "धारा 38 भूमि कब्ज़ा",
+
+    "Section 38":
+      "धारा 38 भूमि कब्ज़ा",
+
+    "Possession":
+      "भूमि कब्ज़ा",
+
+    "R&R Settlement":
+      "R&R निपटान",
+
+    "R&R Entitlements Settlement":
+      "R&R अधिकार निपटान",
+
+    "R&R Entitlement Settlement":
+      "R&R अधिकार निपटान",
+
+    "Rehabilitation & Resettlement":
+      "पुनर्वास एवं पुनर्स्थापन",
+
+    "Rehabilitation and Resettlement":
+      "पुनर्वास एवं पुनर्स्थापन",
+
+    "Rehabilitation":
+      "पुनर्वास",
+
+    "Resettlement":
+      "पुनर्स्थापन",
+  };
+
+  /* Exact match first */
+  if (translations[normalizedName]) {
+    return translations[normalizedName];
+  }
+
+  /*
+   * Extra protection for API values such as:
+   * "Section 23 Award Declaration - ..."
+   */
+  if (
+    normalizedName
+      .toLowerCase()
+      .includes("section 23 award declaration")
+  ) {
+    return normalizedName.replace(
+      /Section 23 Award Declaration/gi,
+      "धारा 23 पुरस्कार घोषणा"
+    );
+  }
+
+  if (
+    normalizedName
+      .toLowerCase()
+      .includes("section 23 award")
+  ) {
+    return normalizedName.replace(
+      /Section 23 Award/gi,
+      "धारा 23 पुरस्कार"
+    );
+  }
+
+  if (
+    normalizedName
+      .toLowerCase()
+      .includes("section 19 declaration")
+  ) {
+    return normalizedName.replace(
+      /Section 19 Declaration/gi,
+      "धारा 19 घोषणा"
+    );
+  }
+
+  if (
+    normalizedName
+      .toLowerCase()
+      .includes("section 11 notification")
+  ) {
+    return normalizedName.replace(
+      /Section 11 Notification/gi,
+      "धारा 11 अधिसूचना"
+    );
+  }
+
+  if (
+    normalizedName
+      .toLowerCase()
+      .includes("section 38 possession")
+  ) {
+    return normalizedName.replace(
+      /Section 38 Possession/gi,
+      "धारा 38 भूमि कब्ज़ा"
+    );
+  }
+
+  if (
+    normalizedName
+      .toLowerCase()
+      .includes("pfms direct benefit transfer")
+  ) {
+    return normalizedName.replace(
+      /PFMS Direct Benefit Transfer/gi,
+      "PFMS प्रत्यक्ष लाभ अंतरण"
+    );
+  }
+
+  if (
+    normalizedName
+      .toLowerCase()
+      .includes("r&r settlement")
+  ) {
+    return normalizedName.replace(
+      /R&R Settlement/gi,
+      "R&R निपटान"
+    );
+  }
+
+  return normalizedName;
+}
+
+/* =========================================================
+   WORKFLOW DATE TRANSLATION
+   ========================================================= */
+
+function translateStageDate(
+  date: string,
+  language: Language
+): string {
+  if (language === "en") {
+    return date;
+  }
+
+  const normalizedDate =
+    date.trim();
+
+  const translations: Record<
+    string,
+    string
+  > = {
+    "12 Oct 2025":
+      "12 अक्टूबर 2025",
+
+    "05 Nov 2025":
+      "05 नवंबर 2025",
+
+    "15 Mar 2026":
+      "15 मार्च 2026",
+
+    "In Scrutiny (Due: 15 Mar)":
+      "जांच में (देय: 15 मार्च)",
+
+    "Pending Award":
+      "पुरस्कार लंबित",
+
+    "Pending DBT":
+      "DBT लंबित",
+
+    "In Survey":
+      "सर्वेक्षण में",
+
+    "Completed":
+      "पूर्ण",
+
+    "Pending":
+      "लंबित",
+
+    "Current":
+      "वर्तमान",
+  };
+
+  if (translations[normalizedDate]) {
+    return translations[normalizedDate];
+  }
+
+  /*
+   * Handle API date formats such as:
+   * 2025-10-12
+   * 2025-11-05
+   */
+  const isoDateMatch =
+    normalizedDate.match(
+      /^(\d{4})-(\d{2})-(\d{2})$/
+    );
+
+  if (isoDateMatch) {
+    const year =
+      isoDateMatch[1];
+
+    const month =
+      isoDateMatch[2];
+
+    const day =
+      isoDateMatch[3];
+
+    const months: Record<
+      string,
+      string
+    > = {
+      "01": "जनवरी",
+      "02": "फ़रवरी",
+      "03": "मार्च",
+      "04": "अप्रैल",
+      "05": "मई",
+      "06": "जून",
+      "07": "जुलाई",
+      "08": "अगस्त",
+      "09": "सितंबर",
+      "10": "अक्टूबर",
+      "11": "नवंबर",
+      "12": "दिसंबर",
+    };
+
+    return `${day} ${
+      months[month] || month
+    } ${year}`;
+  }
+
+  /*
+   * Handle common English month names
+   */
+  const monthTranslations: Record<
+    string,
+    string
+  > = {
+    January: "जनवरी",
+    February: "फ़रवरी",
+    March: "मार्च",
+    April: "अप्रैल",
+    May: "मई",
+    June: "जून",
+    July: "जुलाई",
+    August: "अगस्त",
+    September: "सितंबर",
+    October: "अक्टूबर",
+    November: "नवंबर",
+    December: "दिसंबर",
+  };
+
+  let translatedDate =
+    normalizedDate;
+
+  Object.entries(
+    monthTranslations
+  ).forEach(
+    ([englishMonth, hindiMonth]) => {
+      translatedDate =
+        translatedDate.replace(
+          new RegExp(
+            englishMonth,
+            "gi"
+          ),
+          hindiMonth
+        );
+    }
+  );
+
+  translatedDate =
+    translatedDate.replace(
+      /In Scrutiny/gi,
+      "जांच में"
+    );
+
+  translatedDate =
+    translatedDate.replace(
+      /Due/gi,
+      "देय"
+    );
+
+  translatedDate =
+    translatedDate.replace(
+      /Pending Award/gi,
+      "पुरस्कार लंबित"
+    );
+
+  translatedDate =
+    translatedDate.replace(
+      /Pending DBT/gi,
+      "DBT लंबित"
+    );
+
+  translatedDate =
+    translatedDate.replace(
+      /In Survey/gi,
+      "सर्वेक्षण में"
+    );
+
+  return translatedDate;
+}
+
+/* =========================================================
+   WORKFLOW STATUS TRANSLATION
+   ========================================================= */
+
+function translateStatus(
+  status: string,
+  language: Language
+): string {
+  if (language === "en") {
+    return status;
+  }
+
+  const translations: Record<
+    string,
+    string
+  > = {
+    completed: "पूर्ण",
+    current: "वर्तमान",
+    pending: "लंबित",
+    complete: "पूर्ण",
+    active: "सक्रिय",
+    in_progress: "प्रगति पर",
+  };
+
+  return (
+    translations[
+      status.toLowerCase()
+    ] || status
   );
 }
 
@@ -654,55 +1047,59 @@ export function PredictiveRisk() {
    WORKFLOW TRACKER
    ========================================================= */
 
-export function WorkflowTracker() {
+export function WorkflowTracker({
+  language = "en",
+}: {
+  language?: Language;
+}) {
+  const defaultStages = [
+    {
+      id: 1,
+      name: "Section 11 Notification",
+      status: "completed",
+      date: "12 Oct 2025",
+    },
+
+    {
+      id: 2,
+      name: "Section 19 Declaration",
+      status: "completed",
+      date: "05 Nov 2025",
+    },
+
+    {
+      id: 3,
+      name: "Section 23 Award Declaration",
+      status: "current",
+      date: "In Scrutiny (Due: 15 Mar)",
+    },
+
+    {
+      id: 4,
+      name: "PFMS Direct Benefit Transfer",
+      status: "pending",
+      date: "Pending Award",
+    },
+
+    {
+      id: 5,
+      name: "Section 38 Possession",
+      status: "pending",
+      date: "Pending DBT",
+    },
+
+    {
+      id: 6,
+      name: "R&R Settlement",
+      status: "pending",
+      date: "In Survey",
+    },
+  ];
 
   const [stages, setStages] =
-    useState([
-      {
-        id: 1,
-        name: "Section 11 Notification",
-        status: "completed",
-        date: "12 Oct 2025",
-      },
-
-      {
-        id: 2,
-        name: "Section 19 Declaration",
-        status: "completed",
-        date: "05 Nov 2025",
-      },
-
-      {
-        id: 3,
-        name: "Section 23 Award",
-        status: "current",
-        date: "In Scrutiny (Due: 15 Mar)",
-      },
-
-      {
-        id: 4,
-        name: "PFMS Direct Benefit Transfer",
-        status: "pending",
-        date: "Pending Award",
-      },
-
-      {
-        id: 5,
-        name: "Section 38 Possession",
-        status: "pending",
-        date: "Pending DBT",
-      },
-
-      {
-        id: 6,
-        name: "R&R Settlement",
-        status: "pending",
-        date: "In Survey",
-      },
-    ]);
+    useState(defaultStages);
 
   useEffect(() => {
-
     fetch(
       "/api/v1/projects/PRJ-2026-001"
     )
@@ -710,7 +1107,6 @@ export function WorkflowTracker() {
         res.json()
       )
       .then((resData) => {
-
         const milestones =
           resData.data?.milestones;
 
@@ -718,7 +1114,6 @@ export function WorkflowTracker() {
           milestones &&
           milestones.length > 0
         ) {
-
           const mapped =
             milestones.map(
               (m: any) => ({
@@ -734,10 +1129,8 @@ export function WorkflowTracker() {
 
           setStages(mapped);
         }
-
       })
       .catch(() => {});
-
   }, []);
 
   return (
@@ -756,20 +1149,25 @@ export function WorkflowTracker() {
       }}
       className="bg-card-lifecycle p-6 border-l-4 border-graticule-teal border border-card-accent-teal rounded-lg h-full flex flex-col hover:shadow-md transition-shadow duration-300 card-shadow"
     >
+      {/* ================= HEADER ================= */}
 
       <div className="flex justify-between items-center mb-6 pb-4 border-b border-neutral-stone/20">
 
         <div>
-
           <h3 className="font-serif text-lg font-semibold text-heading-dark">
-            Statutory Lifecycle
+            {language === "hi"
+              ? "वैधानिक जीवनचक्र"
+              : "Statutory Lifecycle"}
           </h3>
 
           <p className="text-xs text-secondary-text font-medium mt-1">
-            Delhi-Mumbai Exp. (PRJ-2026-001)
+            {language === "hi"
+              ? "दिल्ली-मुंबई एक्सप्रेसवे (PRJ-2026-001)"
+              : "Delhi-Mumbai Exp. (PRJ-2026-001)"}
           </p>
-
         </div>
+
+        {/* Compliance */}
 
         <motion.div
           whileHover={{
@@ -777,20 +1175,20 @@ export function WorkflowTracker() {
           }}
           className="px-3 py-1.5 bg-badge-green-bg text-badge-green-text border border-forest-light/30 text-[10px] font-semibold rounded-md flex items-center gap-1.5 shadow-sm"
         >
-
           <CheckCircle2 className="w-3.5 h-3.5" />
 
-          Compliant
-
+          {language === "hi"
+            ? "अनुपालन"
+            : "Compliant"}
         </motion.div>
-
       </div>
+
+      {/* ================= TIMELINE ================= */}
 
       <div className="relative flex-1 flex flex-col">
 
         {stages.map(
           (stage, i) => (
-
             <motion.div
               initial={{
                 opacity: 0,
@@ -811,7 +1209,6 @@ export function WorkflowTracker() {
 
               {i !==
                 stages.length - 1 && (
-
                 <div
                   className={`
                     absolute
@@ -831,10 +1228,9 @@ export function WorkflowTracker() {
                     -translate-x-1/2
                   `}
                 />
-
               )}
 
-              {/* Status icon */}
+              {/* Status Icon */}
 
               <div className="relative z-10">
 
@@ -842,9 +1238,7 @@ export function WorkflowTracker() {
                 "completed" ? (
 
                   <div className="p-1 bg-badge-green-bg rounded-full">
-
                     <CheckCircle2 className="w-6 h-6 text-forest-light" />
-
                   </div>
 
                 ) : stage.status ===
@@ -864,9 +1258,7 @@ export function WorkflowTracker() {
                     }}
                     className="w-7 h-7 rounded-full border-2 border-earth-accent flex items-center justify-center bg-badge-gold-bg"
                   >
-
                     <div className="w-2.5 h-2.5 rounded-full bg-earth-accent" />
-
                   </motion.div>
 
                 ) : (
@@ -877,7 +1269,7 @@ export function WorkflowTracker() {
 
               </div>
 
-              {/* Stage details */}
+              {/* Stage Details */}
 
               <div className="flex-1 pt-0.5">
 
@@ -896,7 +1288,10 @@ export function WorkflowTracker() {
                     }
                   `}
                 >
-                  {stage.name}
+                  {translateStageName(
+                    stage.name,
+                    language
+                  )}
                 </div>
 
                 <div
@@ -915,18 +1310,31 @@ export function WorkflowTracker() {
                     }
                   `}
                 >
-                  {stage.date}
+                  {translateStageDate(
+                    stage.date,
+                    language
+                  )}
                 </div>
 
+                {/* Optional status label */}
+                {stage.status &&
+                  stage.status !==
+                    "completed" &&
+                  false && (
+                    <div className="text-[10px] mt-1 text-secondary-text/60">
+                      {translateStatus(
+                        stage.status,
+                        language
+                      )}
+                    </div>
+                  )}
+
               </div>
-
             </motion.div>
-
           )
         )}
 
       </div>
-
     </motion.div>
   );
 }

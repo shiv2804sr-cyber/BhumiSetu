@@ -1,738 +1,629 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-} from "react";
-
+import { useEffect, useRef, useState } from "react";
 import Map, {
-  Source,
+  GeolocateControl,
   Layer,
   NavigationControl,
-  GeolocateControl,
-  MapRef,
+  Source,
+  type MapRef,
 } from "react-map-gl/maplibre";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
-type LocationCoordinate = {
-  longitude: number;
-  latitude: number;
-  zoom: number;
-};
-
-const INDIA_DEFAULT: LocationCoordinate = {
-  longitude: 78.9629,
-  latitude: 20.5937,
-  zoom: 4,
-};
-
-/*
-|--------------------------------------------------------------------------
-| STATE + DISTRICT COORDINATES
-|--------------------------------------------------------------------------
-|
-| State select -> state location
-| District select -> district location
-|
-*/
-
-const locationCoordinates: Record<
-  string,
-  LocationCoordinate
-> = {
-  /* =========================================================
-     INDIA
-     ========================================================= */
-
-  "All States": {
-    longitude: 78.9629,
-    latitude: 20.5937,
-    zoom: 4,
-  },
-
-  "All Districts": {
-    longitude: 78.9629,
-    latitude: 20.5937,
-    zoom: 4,
-  },
-
-  /* =========================================================
-     DELHI
-     ========================================================= */
-
-  Delhi: {
-    longitude: 77.209,
-    latitude: 28.6139,
-    zoom: 9,
-  },
-
-  "New Delhi": {
-    longitude: 77.209,
-    latitude: 28.6139,
-    zoom: 12,
-  },
-
-  "North Delhi": {
-    longitude: 77.1416,
-    latitude: 28.7495,
-    zoom: 11,
-  },
-
-  "South Delhi": {
-    longitude: 77.2038,
-    latitude: 28.4842,
-    zoom: 11,
-  },
-
-  "East Delhi": {
-    longitude: 77.2924,
-    latitude: 28.6415,
-    zoom: 11,
-  },
-
-  "West Delhi": {
-    longitude: 77.0697,
-    latitude: 28.6432,
-    zoom: 11,
-  },
-
-  /* =========================================================
-     HARYANA
-     ========================================================= */
-
-  Haryana: {
-    longitude: 76.0856,
-    latitude: 29.0588,
-    zoom: 7,
-  },
-
-  Nuh: {
-    longitude: 77.018,
-    latitude: 28.125,
-    zoom: 12,
-  },
-
-  Gurugram: {
-    longitude: 77.0266,
-    latitude: 28.4595,
-    zoom: 11,
-  },
-
-  Faridabad: {
-    longitude: 77.3178,
-    latitude: 28.4089,
-    zoom: 11,
-  },
-
-  Rohtak: {
-    longitude: 76.5706,
-    latitude: 28.8955,
-    zoom: 11,
-  },
-
-  Hisar: {
-    longitude: 75.7139,
-    latitude: 29.1492,
-    zoom: 11,
-  },
-
-  Ambala: {
-    longitude: 76.7821,
-    latitude: 30.3752,
-    zoom: 11,
-  },
-
-  /* =========================================================
-     UTTAR PRADESH
-     ========================================================= */
-
-  "Uttar Pradesh": {
-    longitude: 80.9462,
-    latitude: 26.8467,
-    zoom: 6,
-  },
-
-  Lucknow: {
-    longitude: 80.9462,
-    latitude: 26.8467,
-    zoom: 11,
-  },
-
-  Kanpur: {
-    longitude: 80.3319,
-    latitude: 26.4499,
-    zoom: 11,
-  },
-
-  Agra: {
-    longitude: 78.0081,
-    latitude: 27.1767,
-    zoom: 11,
-  },
-
-  Varanasi: {
-    longitude: 82.9739,
-    latitude: 25.3176,
-    zoom: 11,
-  },
-
-  Noida: {
-    longitude: 77.391,
-    latitude: 28.5355,
-    zoom: 11,
-  },
-
-  Meerut: {
-    longitude: 77.7082,
-    latitude: 28.9845,
-    zoom: 11,
-  },
-
-  /* =========================================================
-     MAHARASHTRA
-     ========================================================= */
-
-  Maharashtra: {
-    longitude: 75.7139,
-    latitude: 19.7515,
-    zoom: 6,
-  },
-
-  Pune: {
-    longitude: 73.8567,
-    latitude: 18.5204,
-    zoom: 11,
-  },
-
-  Mumbai: {
-    longitude: 72.8777,
-    latitude: 19.076,
-    zoom: 11,
-  },
-
-  Nashik: {
-    longitude: 73.7898,
-    latitude: 19.9975,
-    zoom: 11,
-  },
-
-  Nagpur: {
-    longitude: 79.0882,
-    latitude: 21.1458,
-    zoom: 11,
-  },
-
-  Thane: {
-    longitude: 72.9781,
-    latitude: 19.2183,
-    zoom: 11,
-  },
-
-  /* =========================================================
-     TAMIL NADU
-     ========================================================= */
-
-  "Tamil Nadu": {
-    longitude: 78.6569,
-    latitude: 11.1271,
-    zoom: 6,
-  },
-
-  Chennai: {
-    longitude: 80.2707,
-    latitude: 13.0827,
-    zoom: 11,
-  },
-
-  Kanchipuram: {
-    longitude: 79.7036,
-    latitude: 12.8342,
-    zoom: 11,
-  },
-
-  Coimbatore: {
-    longitude: 76.9558,
-    latitude: 11.0168,
-    zoom: 11,
-  },
-
-  Madurai: {
-    longitude: 78.1198,
-    latitude: 9.9252,
-    zoom: 11,
-  },
-
-  /* =========================================================
-     KARNATAKA
-     ========================================================= */
-
-  Karnataka: {
-    longitude: 75.7139,
-    latitude: 15.3173,
-    zoom: 6,
-  },
-
-  Bangalore: {
-    longitude: 77.5946,
-    latitude: 12.9716,
-    zoom: 11,
-  },
-
-  Mysore: {
-    longitude: 76.6394,
-    latitude: 12.2958,
-    zoom: 11,
-  },
-
-  Belgaum: {
-    longitude: 74.4977,
-    latitude: 15.8497,
-    zoom: 11,
-  },
-
-  Mangalore: {
-    longitude: 74.856,
-    latitude: 12.9141,
-    zoom: 11,
-  },
-
-  Hubli: {
-    longitude: 75.124,
-    latitude: 15.3647,
-    zoom: 11,
-  },
-
-  Tumkur: {
-    longitude: 77.101,
-    latitude: 13.3379,
-    zoom: 11,
-  },
-
-  /* =========================================================
-     MADHYA PRADESH
-     ========================================================= */
-
-  "Madhya Pradesh": {
-    longitude: 78.6569,
-    latitude: 22.9734,
-    zoom: 6,
-  },
-
-  Indore: {
-    longitude: 75.8577,
-    latitude: 22.7196,
-    zoom: 11,
-  },
-
-  Bhopal: {
-    longitude: 77.4126,
-    latitude: 23.2599,
-    zoom: 11,
-  },
-
-  Jabalpur: {
-    longitude: 79.9864,
-    latitude: 23.1815,
-    zoom: 11,
-  },
-
-  Gwalior: {
-    longitude: 78.1828,
-    latitude: 26.2183,
-    zoom: 11,
-  },
-
-  Ujjain: {
-    longitude: 75.7885,
-    latitude: 23.1765,
-    zoom: 11,
-  },
-
-  Sagar: {
-    longitude: 78.7378,
-    latitude: 23.8388,
-    zoom: 11,
-  },
-
-  /* =========================================================
-     RAJASTHAN
-     ========================================================= */
-
-  Rajasthan: {
-    longitude: 74.2179,
-    latitude: 27.0238,
-    zoom: 6,
-  },
-
-  Jaipur: {
-    longitude: 75.7873,
-    latitude: 26.9124,
-    zoom: 11,
-  },
-
-  Jodhpur: {
-    longitude: 73.0243,
-    latitude: 26.2389,
-    zoom: 11,
-  },
-
-  Udaipur: {
-    longitude: 73.7125,
-    latitude: 24.5854,
-    zoom: 11,
-  },
-
-  Ajmer: {
-    longitude: 74.6399,
-    latitude: 26.4499,
-    zoom: 11,
-  },
-
-  Bikaner: {
-    longitude: 73.3119,
-    latitude: 28.0229,
-    zoom: 11,
-  },
-
-  Kota: {
-    longitude: 75.8648,
-    latitude: 25.2138,
-    zoom: 11,
-  },
-
-  /* =========================================================
-     JHARKHAND
-     ========================================================= */
-
-  Jharkhand: {
-    longitude: 85.2799,
-    latitude: 23.6102,
-    zoom: 6,
-  },
-
-  Ranchi: {
-    longitude: 85.3096,
-    latitude: 23.3441,
-    zoom: 11,
-  },
-
-  Dhanbad: {
-    longitude: 86.4304,
-    latitude: 23.7957,
-    zoom: 11,
-  },
-
-  Giridih: {
-    longitude: 86.3003,
-    latitude: 24.186,
-    zoom: 11,
-  },
-
-  Bokaro: {
-    longitude: 86.1511,
-    latitude: 23.6693,
-    zoom: 11,
-  },
-
-  Hazaribagh: {
-    longitude: 85.3637,
-    latitude: 23.9925,
-    zoom: 11,
-  },
-
-  Deoghar: {
-    longitude: 86.6953,
-    latitude: 24.4763,
-    zoom: 11,
-  },
-
-  /* =========================================================
-     BIHAR
-     ========================================================= */
-
-  Bihar: {
-    longitude: 85.3131,
-    latitude: 25.0961,
-    zoom: 6,
-  },
-
-  Patna: {
-    longitude: 85.1376,
-    latitude: 25.5941,
-    zoom: 11,
-  },
-
-  Gaya: {
-    longitude: 84.9994,
-    latitude: 24.7914,
-    zoom: 11,
-  },
-
-  Muzaffarpur: {
-    longitude: 85.391,
-    latitude: 26.1197,
-    zoom: 11,
-  },
-
-  Darbhanga: {
-    longitude: 85.9009,
-    latitude: 26.1542,
-    zoom: 11,
-  },
-
-  Bhagalpur: {
-    longitude: 86.9842,
-    latitude: 25.2425,
-    zoom: 11,
-  },
-
-  Madhubani: {
-    longitude: 86.0717,
-    latitude: 26.3489,
-    zoom: 11,
-  },
+interface GISMapProps {
+  selectedState?: string;
+  selectedDistrict?: string;
+}
+
+interface ParcelProperties {
+  ulpin?: string;
+  status?: string;
+  area?: number | string;
+  state?: string;
+  district?: string;
+  village?: string;
+  project?: string;
+  [key: string]: any;
+}
+
+interface ParcelFeature {
+  type: "Feature";
+  id?: string | number;
+  properties?: ParcelProperties;
+  geometry: {
+    type: string;
+    coordinates: any;
+  };
+}
+
+interface ParcelCollection {
+  type: "FeatureCollection";
+  features: ParcelFeature[];
+}
+
+/* =========================================================
+   STATE LOCATIONS
+========================================================= */
+
+const stateCoordinates: Record<string, [number, number]> = {
+  "All States": [78.9629, 22.5937],
+
+  Delhi: [77.1025, 28.7041],
+  Haryana: [76.0856, 29.0588],
+  "Uttar Pradesh": [80.9462, 26.8467],
+  Maharashtra: [75.7139, 19.7515],
+  "Tamil Nadu": [78.6569, 11.1271],
+  Karnataka: [75.7139, 15.3173],
+  "Madhya Pradesh": [78.1734, 22.9734],
+  Rajasthan: [74.2179, 27.0238],
+  Jharkhand: [85.2799, 23.6102],
+  Bihar: [85.3131, 25.0961],
+  Gujarat: [71.1924, 22.2587],
+  Punjab: [75.3412, 31.1471],
+  "West Bengal": [87.855, 22.9868],
+  Odisha: [85.0985, 20.9517],
+  Telangana: [79.0193, 18.1124],
+  Kerala: [76.2711, 10.8505],
+  "Andhra Pradesh": [79.74, 15.9129],
+  Chhattisgarh: [81.8661, 21.2787],
+  Uttarakhand: [79.0193, 30.0668],
+  "Himachal Pradesh": [77.1734, 31.1048],
+  Assam: [92.9376, 26.2006],
+  Goa: [74.124, 15.2993],
 };
 
 /* =========================================================
-   GIS MAP
-   ========================================================= */
+   STATUS COLOURS
+========================================================= */
+
+const STATUS_COLORS: Record<string, string> = {
+  "Section 11 Notification": "#FF7A00",
+  "Section 11": "#FF7A00",
+  Notification: "#FF7A00",
+
+  Award: "#00C853",
+  "Section 23 Award": "#00C853",
+
+  Possession: "#008CFF",
+  "Section 38 Possession": "#008CFF",
+  "Section 38 Land Possession": "#008CFF",
+
+  Settlement: "#8B3DFF",
+  "R&R Settlement": "#8B3DFF",
+  "R&R Entitlements Settlement": "#8B3DFF",
+
+  "Under Review": "#FFD600",
+  Review: "#FFD600",
+
+  Disbursed: "#00C9A7",
+  "Direct Benefit Transfer (DBT)": "#00C9A7",
+  "PFMS Direct Benefit Transfer": "#00C9A7",
+
+  Disputed: "#FF1744",
+
+  Pending: "#FF3D9A",
+
+  Approved: "#7CFC00",
+
+  "In Progress": "#4F46E5",
+
+  Survey: "#00B8D9",
+
+  Processing: "#D500F9",
+
+  Draft: "#FF9800",
+
+  Completed: "#00A896",
+};
+
+const DEFAULT_COLOR = "#22D3EE";
+
+/* =========================================================
+   GET STATUS COLOUR
+========================================================= */
+
+function getStatusColor(status?: string): string {
+  if (!status) {
+    return DEFAULT_COLOR;
+  }
+
+  if (STATUS_COLORS[status]) {
+    return STATUS_COLORS[status];
+  }
+
+  const normalized = status.toLowerCase();
+
+  if (normalized.includes("notification")) {
+    return "#FF7A00";
+  }
+
+  if (normalized.includes("award")) {
+    return "#00C853";
+  }
+
+  if (normalized.includes("possession")) {
+    return "#008CFF";
+  }
+
+  if (normalized.includes("settlement")) {
+    return "#8B3DFF";
+  }
+
+  if (normalized.includes("review")) {
+    return "#FFD600";
+  }
+
+  if (
+    normalized.includes("disburs") ||
+    normalized.includes("dbt")
+  ) {
+    return "#00C9A7";
+  }
+
+  if (normalized.includes("disput")) {
+    return "#FF1744";
+  }
+
+  if (normalized.includes("pending")) {
+    return "#FF3D9A";
+  }
+
+  if (normalized.includes("approved")) {
+    return "#7CFC00";
+  }
+
+  if (normalized.includes("progress")) {
+    return "#4F46E5";
+  }
+
+  if (normalized.includes("survey")) {
+    return "#00B8D9";
+  }
+
+  if (normalized.includes("processing")) {
+    return "#D500F9";
+  }
+
+  if (normalized.includes("draft")) {
+    return "#FF9800";
+  }
+
+  if (normalized.includes("completed")) {
+    return "#00A896";
+  }
+
+  return DEFAULT_COLOR;
+}
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export function GISMap({
   selectedState = "All States",
   selectedDistrict = "All Districts",
-}: {
-  selectedState?: string;
-  selectedDistrict?: string;
-}) {
-  const mapRef = useRef<MapRef>(null);
+}: GISMapProps) {
+  const mapRef = useRef<MapRef | null>(null);
 
-  const [parcels, setParcels] =
-    useState<any>(null);
+  const [parcels, setParcels] = useState<ParcelCollection>({
+    type: "FeatureCollection",
+    features: [],
+  });
 
-  const [hoverInfo, setHoverInfo] =
-    useState<{
-      feature: any;
-      x: number;
-      y: number;
-    } | null>(null);
+  const [hoverInfo, setHoverInfo] = useState<{
+    x: number;
+    y: number;
+    properties: ParcelProperties;
+  } | null>(null);
 
-  /* =========================================================
-     LOAD PARCEL DATA
-     ========================================================= */
+  const [mapReady, setMapReady] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  /* =======================================================
+     LOAD PARCELS
+  ======================================================= */
 
   useEffect(() => {
-    fetch("/api/parcels")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(
-            `Parcel API failed: ${res.status}`
-          );
+    let cancelled = false;
+
+    async function loadParcels() {
+      try {
+        setIsLoading(true);
+
+        const response = await fetch("/api/parcels");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch parcel data");
         }
 
-        return res.json();
-      })
-      .then((data) => {
-        setParcels(data);
-      })
-      .catch((err) => {
+        const data = await response.json();
+
+        if (cancelled) {
+          return;
+        }
+
+        let collection: ParcelCollection;
+
+        if (data?.type === "FeatureCollection") {
+          collection = data as ParcelCollection;
+        } else if (Array.isArray(data)) {
+          collection = {
+            type: "FeatureCollection",
+            features: data as ParcelFeature[],
+          };
+        } else if (Array.isArray(data?.features)) {
+          collection = {
+            type: "FeatureCollection",
+            features: data.features as ParcelFeature[],
+          };
+        } else {
+          collection = {
+            type: "FeatureCollection",
+            features: [],
+          };
+        }
+
+        setParcels(collection);
+      } catch (error) {
         console.error(
-          "Failed to load parcels",
-          err
+          "Failed to load GIS parcel data:",
+          error
         );
-      });
+
+        if (!cancelled) {
+          setParcels({
+            type: "FeatureCollection",
+            features: [],
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadParcels();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  /* =========================================================
-     AUTO MOVE MAP WHEN STATE / DISTRICT CHANGES
-     ========================================================= */
+  /* =======================================================
+     MOVE MAP WHEN STATE / DISTRICT CHANGES
+  ======================================================= */
 
   useEffect(() => {
-    if (!mapRef.current) {
+    if (!mapReady || !mapRef.current) {
       return;
     }
 
-    /*
-     * Priority:
-     *
-     * 1. Selected district
-     * 2. Selected state
-     * 3. India
-     */
-
-    let target: LocationCoordinate | undefined;
-
-    if (
-      selectedDistrict &&
-      selectedDistrict !== "All Districts" &&
-      locationCoordinates[selectedDistrict]
-    ) {
-      target =
-        locationCoordinates[
-          selectedDistrict
-        ];
-    } else if (
-      selectedState &&
-      selectedState !== "All States" &&
-      locationCoordinates[selectedState]
-    ) {
-      target =
-        locationCoordinates[
-          selectedState
-        ];
-    } else {
-      target = INDIA_DEFAULT;
-    }
-
-    /*
-     * Smooth map movement.
-     */
+    const coordinates =
+      stateCoordinates[selectedState] ||
+      stateCoordinates["All States"];
 
     mapRef.current.flyTo({
-      center: [
-        target.longitude,
-        target.latitude,
-      ],
-
-      zoom: target.zoom,
-
-      duration: 1800,
-
+      center: coordinates,
+      zoom:
+        selectedState === "All States"
+          ? 4.6
+          : 6.3,
+      duration: 1200,
       essential: true,
     });
   }, [
     selectedState,
     selectedDistrict,
+    mapReady,
   ]);
 
-  /* =========================================================
-     HOVER
-     ========================================================= */
+  /* =======================================================
+     MAP LOAD
+  ======================================================= */
 
-  const onHover = (event: any) => {
-    const {
-      features,
-      point: { x, y },
-    } = event;
-
-    const hoveredFeature =
-      features && features[0];
-
-    if (hoveredFeature) {
-      setHoverInfo({
-        feature: hoveredFeature,
-        x,
-        y,
-      });
-    } else {
-      setHoverInfo(null);
-    }
+  const handleMapLoad = () => {
+    setMapReady(true);
   };
 
-  /* =========================================================
-     RESET INDIA VIEW
-     ========================================================= */
+  /* =======================================================
+     MOUSE HOVER
+  ======================================================= */
 
-  const resetIndiaView = () => {
-    if (!mapRef.current) {
+  const handleMouseMove = (event: any) => {
+    const feature = event.features?.[0];
+
+    if (!feature) {
+      setHoverInfo(null);
       return;
     }
 
-    mapRef.current.flyTo({
-      center: [
-        INDIA_DEFAULT.longitude,
-        INDIA_DEFAULT.latitude,
-      ],
-      zoom: INDIA_DEFAULT.zoom,
-      duration: 1600,
-      essential: true,
+    setHoverInfo({
+      x: event.point.x,
+      y: event.point.y,
+      properties: feature.properties || {},
     });
   };
 
-  /* =========================================================
-     INITIAL LOCATION
-     ========================================================= */
+  const handleMouseLeave = () => {
+    setHoverInfo(null);
+  };
 
-  const initialTarget =
-    selectedDistrict &&
-    selectedDistrict !== "All Districts" &&
-    locationCoordinates[selectedDistrict]
-      ? locationCoordinates[selectedDistrict]
-      : selectedState &&
-          selectedState !== "All States" &&
-          locationCoordinates[selectedState]
-        ? locationCoordinates[selectedState]
-        : INDIA_DEFAULT;
+  /* =======================================================
+     ESRI STREET MAP
+  ======================================================= */
 
-  /* =========================================================
-     RENDER
-     ========================================================= */
+  const mapStyle = {
+    version: 8 as const,
+
+    sources: {
+      esri: {
+        type: "raster" as const,
+
+        tiles: [
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+        ],
+
+        tileSize: 256,
+
+        attribution:
+          "Tiles © Esri | Map data contributors",
+      },
+    },
+
+    layers: [
+      {
+        id: "esri-base-map",
+
+        type: "raster" as const,
+
+        source: "esri",
+
+        minzoom: 0,
+
+        maxzoom: 19,
+
+        paint: {
+          "raster-opacity": 1,
+
+          "raster-saturation": 0.18,
+
+          "raster-contrast": 0.08,
+
+          "raster-brightness-min": 0.05,
+
+          "raster-brightness-max": 1,
+        },
+      },
+    ],
+  };
+
+  /* =======================================================
+     PARCEL FILL COLOUR
+  ======================================================= */
+
+  const parcelColorExpression: any = [
+    "match",
+    ["get", "status"],
+
+    "Section 11 Notification",
+    "#FF7A00",
+
+    "Section 11",
+    "#FF7A00",
+
+    "Notification",
+    "#FF7A00",
+
+    "Award",
+    "#00C853",
+
+    "Section 23 Award",
+    "#00C853",
+
+    "Possession",
+    "#008CFF",
+
+    "Section 38 Possession",
+    "#008CFF",
+
+    "Section 38 Land Possession",
+    "#008CFF",
+
+    "Settlement",
+    "#8B3DFF",
+
+    "R&R Settlement",
+    "#8B3DFF",
+
+    "R&R Entitlements Settlement",
+    "#8B3DFF",
+
+    "Under Review",
+    "#FFD600",
+
+    "Review",
+    "#FFD600",
+
+    "Disbursed",
+    "#00C9A7",
+
+    "Direct Benefit Transfer (DBT)",
+    "#00C9A7",
+
+    "PFMS Direct Benefit Transfer",
+    "#00C9A7",
+
+    "Disputed",
+    "#FF1744",
+
+    "Pending",
+    "#FF3D9A",
+
+    "Approved",
+    "#7CFC00",
+
+    "In Progress",
+    "#4F46E5",
+
+    "Survey",
+    "#00B8D9",
+
+    "Processing",
+    "#D500F9",
+
+    "Draft",
+    "#FF9800",
+
+    "Completed",
+    "#00A896",
+
+    DEFAULT_COLOR,
+  ];
+
+  /* =======================================================
+     PARCEL BORDER COLOUR
+  ======================================================= */
+
+  const parcelLineExpression: any = [
+    "match",
+    ["get", "status"],
+
+    "Section 11 Notification",
+    "#C2410C",
+
+    "Section 11",
+    "#C2410C",
+
+    "Notification",
+    "#C2410C",
+
+    "Award",
+    "#047857",
+
+    "Section 23 Award",
+    "#047857",
+
+    "Possession",
+    "#0369A1",
+
+    "Section 38 Possession",
+    "#0369A1",
+
+    "Section 38 Land Possession",
+    "#0369A1",
+
+    "Settlement",
+    "#6D28D9",
+
+    "R&R Settlement",
+    "#6D28D9",
+
+    "R&R Entitlements Settlement",
+    "#6D28D9",
+
+    "Under Review",
+    "#B45309",
+
+    "Review",
+    "#B45309",
+
+    "Disbursed",
+    "#0F766E",
+
+    "Direct Benefit Transfer (DBT)",
+    "#0F766E",
+
+    "PFMS Direct Benefit Transfer",
+    "#0F766E",
+
+    "Disputed",
+    "#BE123C",
+
+    "Pending",
+    "#BE185D",
+
+    "Approved",
+    "#4D7C0F",
+
+    "In Progress",
+    "#3730A3",
+
+    "Survey",
+    "#0E7490",
+
+    "Processing",
+    "#A21CAF",
+
+    "Draft",
+    "#C2410C",
+
+    "Completed",
+    "#0F766E",
+
+    "#155E75",
+  ];
+
+  /* =======================================================
+     LEGEND
+  ======================================================= */
+
+  const legendItems: Array<[string, string]> = [
+    ["Section 11 Notification", "#FF7A00"],
+    ["Award", "#00C853"],
+    ["Possession", "#008CFF"],
+    ["Settlement", "#8B3DFF"],
+    ["Under Review", "#FFD600"],
+    ["Disbursed", "#00C9A7"],
+    ["Disputed", "#FF1744"],
+    ["Pending", "#FF3D9A"],
+    ["Approved", "#7CFC00"],
+    ["In Progress", "#4F46E5"],
+    ["Survey", "#00B8D9"],
+    ["Processing", "#D500F9"],
+  ];
+
+  /* =======================================================
+     RETURN
+  ======================================================= */
 
   return (
-    <div className="relative w-full h-full bg-slate-100 overflow-hidden border border-graticule-teal/30">
+    <div className="relative w-full h-full min-h-[500px] overflow-hidden bg-sky-100">
+
+      {/* ===================================================
+          MAP
+      =================================================== */}
 
       <Map
         ref={mapRef}
+
         initialViewState={{
-          longitude:
-            initialTarget.longitude,
-
-          latitude:
-            initialTarget.latitude,
-
-          zoom:
-            initialTarget.zoom,
+          longitude: 78.9629,
+          latitude: 22.5937,
+          zoom: 4.6,
         }}
+
+        mapStyle={mapStyle as any}
+
         style={{
           width: "100%",
           height: "100%",
         }}
-        mapStyle={{
-          version: 8,
 
-          sources: {
-            osm: {
-              type: "raster",
+        minZoom={3}
+        maxZoom={17}
 
-              tiles: [
-                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-              ],
+        interactiveLayerIds={[
+          "parcel-fill",
+          "parcel-outline",
+          "proposed-alignment",
+        ]}
 
-              tileSize: 256,
+        onLoad={handleMapLoad}
 
-              attribution:
-                "&copy; OpenStreetMap Contributors",
-            },
-          },
+        onMouseMove={handleMouseMove}
 
-          layers: [
-            {
-              id: "osm",
-
-              type: "raster",
-
-              source: "osm",
-            },
-          ],
-        }}
-
-        /* ===================================================
-           MAP INTERACTION
-           =================================================== */
-
-        interactiveLayerIds={
-          parcels
-            ? [
-                "parcels-fill",
-                "corridor-line",
-              ]
-            : []
-        }
-
-        onMouseMove={onHover}
-
-        onMouseLeave={() =>
-          setHoverInfo(null)
-        }
+        onMouseLeave={handleMouseLeave}
 
         cursor={
           hoverInfo
@@ -741,280 +632,411 @@ export function GISMap({
         }
       >
 
-        {/* ===================================================
-            ZOOM + / -
-            CURRENT NAVIGATION CONTROL
-            =================================================== */}
+        {/* =================================================
+            NAVIGATION CONTROLS
+        ================================================= */}
 
         <NavigationControl
           position="top-right"
           showCompass={true}
-          showZoom={true}
+          visualizePitch={true}
         />
-
-        {/* ===================================================
-            REAL DEVICE LOCATION
-            =================================================== */}
 
         <GeolocateControl
           position="top-right"
-          positionOptions={{
-            enableHighAccuracy: true,
-          }}
           trackUserLocation={false}
-          showUserLocation={true}
-          showAccuracyCircle={true}
+          showAccuracyCircle={false}
         />
 
-        {/* ===================================================
-            PARCEL DATA
-            =================================================== */}
+        {/* =================================================
+            PARCEL SOURCE
+        ================================================= */}
 
-        {parcels && (
-          <Source
-            id="parcels"
-            type="geojson"
-            data={parcels}
-          >
+        <Source
+          id="parcels"
+          type="geojson"
+          data={parcels as any}
+        >
 
-            {/* PARCEL FILL */}
+          {/* PARCEL FILL */}
 
-            <Layer
-              id="parcels-fill"
-              type="fill"
-              filter={[
-                "==",
-                ["geometry-type"],
-                "Polygon",
-              ]}
-              paint={{
-                "fill-color": [
-                  "match",
-                  ["get", "status"],
+          <Layer
+            id="parcel-fill"
+            type="fill"
+            paint={{
+              "fill-color":
+                parcelColorExpression,
 
-                  "Notification",
-                  "#A8672E",
+              "fill-opacity": [
+                "case",
 
-                  "Award",
-                  "#2F6B3A",
-
-                  "#5E7B78",
+                [
+                  "boolean",
+                  ["feature-state", "hover"],
+                  false,
                 ],
 
-                "fill-opacity": [
-                  "case",
+                0.9,
 
-                  [
-                    "boolean",
-                    [
-                      "feature-state",
-                      "hover",
-                    ],
-                    false,
-                  ],
-
-                  0.8,
-
-                  0.4,
-                ],
-              }}
-            />
-
-            {/* PARCEL BORDER */}
-
-            <Layer
-              id="parcels-line"
-              type="line"
-              filter={[
-                "==",
-                ["geometry-type"],
-                "Polygon",
-              ]}
-              paint={{
-                "line-color":
-                  "#10233F",
-
-                "line-width": 1,
-              }}
-            />
-
-            {/* PROJECT CORRIDOR */}
-
-            <Layer
-              id="corridor-line"
-              type="line"
-              filter={[
-                "==",
-                ["geometry-type"],
-                "LineString",
-              ]}
-              paint={{
-                "line-color":
-                  "#A8672E",
-
-                "line-width": 4,
-
-                "line-dasharray": [
-                  2,
-                  2,
-                ],
-              }}
-            />
-
-          </Source>
-        )}
-
-        {/* ===================================================
-            HOVER INFORMATION
-            =================================================== */}
-
-        {hoverInfo && (
-          <div
-            className="absolute bg-white p-3 border border-graticule-teal/30 shadow-lg pointer-events-none text-sm min-w-[200px] z-10 rounded-sm"
-            style={{
-              left: hoverInfo.x,
-              top: hoverInfo.y,
-
-              transform:
-                "translate(-50%, -100%)",
-
-              marginTop: "-10px",
+                0.68,
+              ],
             }}
-          >
+          />
 
-            {hoverInfo.feature
-              ?.properties
-              ?.ulpin !== "N/A" &&
-              hoverInfo.feature
-                ?.properties
-                ?.ulpin && (
-                <div className="font-mono text-xs text-graticule-teal mb-1">
-                  ULPIN:{" "}
-                  {
-                    hoverInfo.feature
-                      .properties
-                      .ulpin
-                  }
-                </div>
-              )}
+          {/* PARCEL OUTLINE */}
 
-            <div className="font-semibold text-registry-ink mb-1">
-              {
-                hoverInfo.feature
-                  ?.properties
-                  ?.owner
-              }
-            </div>
+          <Layer
+            id="parcel-outline"
+            type="line"
+            paint={{
+              "line-color":
+                parcelLineExpression,
 
-            <div className="flex justify-between text-registry-ink/80 text-xs">
-              <span>
-                Status:
-              </span>
+              "line-width": [
+                "case",
 
-              <span className="font-medium">
-                {
-                  hoverInfo.feature
-                    ?.properties
-                    ?.status
-                }
-              </span>
-            </div>
+                [
+                  "boolean",
+                  ["feature-state", "hover"],
+                  false,
+                ],
 
-            {hoverInfo.feature
-              ?.properties
-              ?.area > 0 && (
-              <div className="flex justify-between text-registry-ink/80 text-xs mt-0.5">
+                3.5,
 
-                <span>
-                  Area:
-                </span>
+                1.6,
+              ],
 
-                <span>
-                  {
-                    hoverInfo.feature
-                      .properties
-                      .area
-                  }{" "}
-                  Ha
-                </span>
+              "line-opacity": 0.95,
+            }}
+          />
 
-              </div>
-            )}
+        </Source>
 
-          </div>
-        )}
+        {/* =================================================
+            PROPOSED ALIGNMENT
+        ================================================= */}
+
+        <Source
+          id="alignment"
+          type="geojson"
+          data={{
+            type: "FeatureCollection",
+            features: [],
+          }}
+        >
+
+          <Layer
+            id="proposed-alignment"
+            type="line"
+            paint={{
+              "line-color": "#FF3D00",
+
+              "line-width": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+
+                4,
+                2,
+
+                7,
+                4,
+
+                12,
+                6,
+              ],
+
+              "line-opacity": 0.9,
+
+              "line-dasharray": [
+                2,
+                1,
+              ],
+            }}
+          />
+
+        </Source>
 
       </Map>
 
-      {/* =====================================================
-          RESET INDIA BUTTON
-          ===================================================== */}
+      {/* ===================================================
+          TOP COLOUR STRIP
+      =================================================== */}
+
+      <div
+        className="
+          absolute
+          top-0
+          left-0
+          right-0
+          h-[5px]
+          z-20
+          bg-gradient-to-r
+          from-orange-500
+          via-green-500
+          via-blue-500
+          via-purple-500
+          to-pink-500
+        "
+      />
+
+      {/* ===================================================
+          INDIA VIEW BUTTON
+      =================================================== */}
 
       <button
-        type="button"
-        onClick={resetIndiaView}
-        className="absolute top-4 left-4 z-20 bg-white border border-graticule-teal/30 shadow-md px-3 py-2 rounded-sm text-xs font-semibold text-registry-ink hover:bg-graticule-teal/10 transition-colors"
+        onClick={() => {
+          mapRef.current?.flyTo({
+            center: [
+              78.9629,
+              22.5937,
+            ],
+
+            zoom: 4.6,
+
+            duration: 1000,
+          });
+        }}
+
+        className="
+          absolute
+          top-4
+          left-4
+          z-20
+          rounded-xl
+          bg-white/95
+          backdrop-blur-sm
+          shadow-lg
+          border
+          border-white
+          px-4
+          py-3
+          text-sm
+          font-semibold
+          text-slate-700
+          hover:bg-white
+          transition-all
+        "
       >
         🇮🇳 India View
       </button>
 
-      {/* =====================================================
-          CURRENT LOCATION LABEL
-          ===================================================== */}
+      {/* ===================================================
+          STATE BADGE
+      =================================================== */}
 
-      <div className="absolute top-4 left-32 z-20 bg-white/95 backdrop-blur-sm border border-graticule-teal/30 shadow-md px-3 py-2 rounded-sm text-xs text-registry-ink">
+      <div
+        className="
+          absolute
+          top-4
+          left-[125px]
+          z-20
+          flex
+          items-center
+          gap-2
+          rounded-xl
+          bg-white/95
+          backdrop-blur-sm
+          shadow-lg
+          px-4
+          py-3
+          text-sm
+          font-semibold
+          text-slate-700
+        "
+      >
 
-        <span className="font-semibold">
-          {selectedDistrict &&
-          selectedDistrict !==
-            "All Districts"
-            ? selectedDistrict
-            : selectedState &&
-                selectedState !==
-                  "All States"
-              ? selectedState
-              : "India"}
-        </span>
+        <span
+          className="
+            w-3
+            h-3
+            rounded-full
+            bg-emerald-500
+            shadow-[0_0_8px_rgba(16,185,129,0.8)]
+          "
+        />
+
+        {selectedState === "All States"
+          ? "India"
+          : selectedState}
 
       </div>
 
-      {/* =====================================================
-          MAP LEGEND
-          ===================================================== */}
+      {/* ===================================================
+          COMPACT LEGEND
+      =================================================== */}
 
-      <div className="absolute bottom-6 left-6 bg-white p-4 border border-graticule-teal/30 shadow-sm text-sm z-10">
+      <div
+        className="
+          absolute
+          left-3
+          bottom-3
+          z-20
+          w-[255px]
+          max-w-[calc(100%-24px)]
+          overflow-hidden
+          rounded-xl
+          bg-white/95
+          backdrop-blur-sm
+          shadow-xl
+          border
+          border-white
+        "
+      >
 
-        <h4 className="font-serif mb-2 text-registry-ink font-semibold">
-          Map Legend
-        </h4>
+        {/* LEGEND HEADER */}
 
-        <div className="space-y-2 text-registry-ink/80">
+        <div
+          className="
+            px-3
+            py-2.5
+            bg-gradient-to-r
+            from-cyan-500
+            via-blue-600
+            to-purple-600
+            text-white
+          "
+        >
 
-          <div className="flex items-center gap-2">
+          <div
+            className="
+              text-[8px]
+              tracking-[0.2em]
+              font-semibold
+              uppercase
+              opacity-90
+            "
+          >
+            BhoomiSetu GIS
+          </div>
 
-            <div className="w-4 h-4 bg-tilled-earth/40 border border-registry-ink" />
+          <div
+            className="
+              text-sm
+              font-bold
+              leading-tight
+            "
+          >
+            Parcel Visualization
+          </div>
 
-            <span>
-              Section 11 Notification
-            </span>
+        </div>
+
+        {/* LEGEND ITEMS */}
+
+        <div className="px-3 py-2.5">
+
+          <div className="grid grid-cols-1 gap-[3px]">
+
+            {legendItems.map(
+              ([label, color]) => (
+                <div
+                  key={label}
+                  className="
+                    flex
+                    items-center
+                    gap-2
+                    min-h-[23px]
+                  "
+                >
+
+                  <span
+                    className="
+                      w-[15px]
+                      h-[15px]
+                      shrink-0
+                      rounded-[5px]
+                      border-2
+                      border-white
+                      shadow-sm
+                    "
+                    style={{
+                      backgroundColor:
+                        color,
+
+                      boxShadow:
+                        `0 0 0 1px ${color}55`,
+                    }}
+                  />
+
+                  <span
+                    className="
+                      text-[11px]
+                      font-semibold
+                      text-slate-700
+                      leading-none
+                    "
+                  >
+                    {label}
+                  </span>
+
+                </div>
+              )
+            )}
 
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* DIVIDER */}
 
-            <div className="w-4 h-4 bg-cultivated-green/40 border border-registry-ink" />
+          <div
+            className="
+              my-2
+              border-t
+              border-slate-200
+            "
+          />
 
-            <span>
-              Award / Possession
-            </span>
+          {/* PROPOSED ALIGNMENT */}
 
-          </div>
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+            "
+          >
 
-          <div className="flex items-center gap-2">
+            <div
+              className="
+                flex
+                items-center
+                gap-[3px]
+              "
+            >
 
-            <div className="w-4 h-1 border-t-2 border-dashed border-tilled-earth" />
+              <span
+                className="
+                  w-3
+                  h-[3px]
+                  bg-orange-600
+                "
+              />
 
-            <span>
+              <span
+                className="
+                  w-3
+                  h-[3px]
+                  bg-orange-600
+                "
+              />
+
+              <span
+                className="
+                  w-3
+                  h-[3px]
+                  bg-orange-600
+                "
+              />
+
+            </div>
+
+            <span
+              className="
+                text-[11px]
+                font-semibold
+                text-slate-700
+              "
+            >
               Proposed Alignment
             </span>
 
@@ -1023,6 +1045,376 @@ export function GISMap({
         </div>
 
       </div>
+
+      {/* ===================================================
+          LIVE GIS BADGE
+      =================================================== */}
+
+      <div
+        className="
+          absolute
+          right-4
+          bottom-4
+          z-20
+          flex
+          items-center
+          gap-2
+          rounded-full
+          bg-slate-900/90
+          text-white
+          px-3
+          py-1.5
+          shadow-lg
+          text-[10px]
+          font-semibold
+        "
+      >
+
+        <span
+          className="
+            w-2
+            h-2
+            rounded-full
+            bg-emerald-400
+            animate-pulse
+          "
+        />
+
+        Live GIS Data
+
+      </div>
+
+      {/* ===================================================
+          LOADING
+      =================================================== */}
+
+      {isLoading && (
+        <div
+          className="
+            absolute
+            inset-0
+            z-30
+            flex
+            items-center
+            justify-center
+            pointer-events-none
+          "
+        >
+
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+              rounded-full
+              bg-white/95
+              backdrop-blur-sm
+              shadow-lg
+              px-4
+              py-2.5
+              text-xs
+              font-semibold
+              text-slate-700
+            "
+          >
+
+            <span
+              className="
+                w-3
+                h-3
+                rounded-full
+                border-2
+                border-blue-500
+                border-t-transparent
+                animate-spin
+              "
+            />
+
+            Loading GIS parcels...
+
+          </div>
+
+        </div>
+      )}
+
+      {/* ===================================================
+          HOVER POPUP
+      =================================================== */}
+
+      {hoverInfo && (
+        <div
+          className="
+            absolute
+            z-40
+            pointer-events-none
+            w-[220px]
+            rounded-xl
+            overflow-hidden
+            bg-white
+            shadow-2xl
+            border
+            border-white
+          "
+          style={{
+            left: Math.min(
+              hoverInfo.x + 15,
+              typeof window !== "undefined"
+                ? window.innerWidth - 245
+                : hoverInfo.x + 15
+            ),
+
+            top: Math.max(
+              hoverInfo.y - 100,
+              15
+            ),
+          }}
+        >
+
+          {/* POPUP HEADER */}
+
+          <div
+            className="
+              px-3
+              py-2.5
+              bg-gradient-to-r
+              from-cyan-500
+              via-blue-600
+              to-violet-600
+            "
+          >
+
+            <div
+              className="
+                text-[9px]
+                uppercase
+                tracking-wider
+                text-white/80
+                font-semibold
+              "
+            >
+              BhoomiSetu GIS
+            </div>
+
+            <div
+              className="
+                text-sm
+                font-bold
+                text-white
+              "
+            >
+              Parcel Details
+            </div>
+
+          </div>
+
+          {/* POPUP BODY */}
+
+          <div className="p-3 space-y-2">
+
+            {/* ULPIN */}
+
+            {hoverInfo.properties.ulpin && (
+              <div>
+
+                <div
+                  className="
+                    text-[9px]
+                    uppercase
+                    text-slate-400
+                    font-bold
+                  "
+                >
+                  ULPIN
+                </div>
+
+                <div
+                  className="
+                    text-xs
+                    font-semibold
+                    text-slate-700
+                    break-all
+                  "
+                >
+                  {String(
+                    hoverInfo.properties.ulpin
+                  )}
+                </div>
+
+              </div>
+            )}
+
+            {/* STATUS */}
+
+            {hoverInfo.properties.status && (
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  gap-2
+                "
+              >
+
+                <span
+                  className="
+                    text-[10px]
+                    text-slate-400
+                    font-semibold
+                  "
+                >
+                  Status
+                </span>
+
+                <span
+                  className="
+                    px-2
+                    py-1
+                    rounded-full
+                    text-[9px]
+                    font-bold
+                    text-white
+                  "
+                  style={{
+                    backgroundColor:
+                      getStatusColor(
+                        String(
+                          hoverInfo
+                            .properties
+                            .status
+                        )
+                      ),
+                  }}
+                >
+                  {String(
+                    hoverInfo
+                      .properties
+                      .status
+                  )}
+                </span>
+
+              </div>
+            )}
+
+            {/* AREA */}
+
+            {hoverInfo.properties.area && (
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                "
+              >
+
+                <span
+                  className="
+                    text-[10px]
+                    text-slate-400
+                    font-semibold
+                  "
+                >
+                  Area
+                </span>
+
+                <span
+                  className="
+                    text-xs
+                    font-bold
+                    text-slate-700
+                  "
+                >
+                  {String(
+                    hoverInfo.properties.area
+                  )}
+                </span>
+
+              </div>
+            )}
+
+            {/* STATE */}
+
+            {hoverInfo.properties.state && (
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  gap-2
+                "
+              >
+
+                <span
+                  className="
+                    text-[10px]
+                    text-slate-400
+                    font-semibold
+                  "
+                >
+                  State
+                </span>
+
+                <span
+                  className="
+                    text-[10px]
+                    font-bold
+                    text-slate-700
+                    text-right
+                  "
+                >
+                  {String(
+                    hoverInfo
+                      .properties
+                      .state
+                  )}
+                </span>
+
+              </div>
+            )}
+
+            {/* DISTRICT */}
+
+            {hoverInfo.properties.district && (
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  gap-2
+                "
+              >
+
+                <span
+                  className="
+                    text-[10px]
+                    text-slate-400
+                    font-semibold
+                  "
+                >
+                  District
+                </span>
+
+                <span
+                  className="
+                    text-[10px]
+                    font-bold
+                    text-slate-700
+                    text-right
+                  "
+                >
+                  {String(
+                    hoverInfo
+                      .properties
+                      .district
+                  )}
+                </span>
+
+              </div>
+            )}
+
+          </div>
+
+        </div>
+      )}
 
     </div>
   );

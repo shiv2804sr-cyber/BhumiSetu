@@ -2,707 +2,521 @@ import { useEffect } from "react";
 
 type Language = "en" | "hi";
 
-interface Props {
-  language: Language;
-}
+/*
+|--------------------------------------------------------------------------
+| SAFE HINDI TRANSLATION DICTIONARY
+|--------------------------------------------------------------------------
+| Important:
+| We use exact phrases / complete words.
+| We DO NOT replace random substrings.
+|--------------------------------------------------------------------------
+*/
 
-/**
- * BhoomiSetu Global Hindi Translator
- *
- * This is a lightweight global UI translator.
- * It translates visible English UI text without requiring
- * every individual component to be edited.
- */
+const translations: Record<string, string> = {
+  /* =========================
+     COMMON UI
+  ========================= */
 
-const TRANSLATIONS: Record<string, string> = {
-  /* ============================================================
-     COMMON
-  ============================================================ */
-
-  "All States": "सभी राज्य",
-  "All Districts": "सभी जिले",
-  "All Statuses": "सभी स्थितियाँ",
-  "Active Session": "सक्रिय सत्र",
-  "Guest User": "अतिथि उपयोगकर्ता",
-  "Guest": "अतिथि",
-  "Sign Out": "साइन आउट",
-  "Sign In": "साइन इन",
-  "Login": "लॉगिन",
-  "Logout": "लॉगआउट",
-  "Switch Role or Sign In": "भूमिका बदलें या साइन इन करें",
-  "View Alerts": "सूचनाएँ देखें",
-  "Notifications": "सूचनाएँ",
-  "Alerts": "अधिसूचनाएँ",
-  "System Notifications": "सिस्टम सूचनाएँ",
-  "System Alerts": "सिस्टम अलर्ट",
-
-  /* ============================================================
-     SIDEBAR / NAVIGATION
-  ============================================================ */
-
+  Dashboard: "डैशबोर्ड",
   "National Dashboard": "राष्ट्रीय डैशबोर्ड",
-  "Dashboard": "डैशबोर्ड",
-  "Proposals": "प्रस्ताव",
-  "GIS Map": "जीआईएस मानचित्र",
-  "Compensation": "मुआवज़ा",
-  "R&R": "पुनर्वास एवं पुनर्स्थापन",
-  "Rehabilitation & Resettlement": "पुनर्वास एवं पुनर्स्थापन",
-  "Documents": "दस्तावेज़",
-  "Awards": "पुरस्कार",
-  "Reports": "रिपोर्ट",
-  "Grievance": "शिकायत",
-  "Grievance Redressal": "शिकायत निवारण",
-  "Map": "मानचित्र",
-  "Settings": "सेटिंग्स",
-  "Profile": "प्रोफ़ाइल",
-
-  /* ============================================================
-     DASHBOARD
-  ============================================================ */
-
   "Live Parcel Map": "लाइव भूमि पार्सल मानचित्र",
   "Auto-sync active": "स्वचालित सिंक सक्रिय",
-  "Statutory Lifecycle": "वैधानिक प्रक्रिया चक्र",
-  "Compliant": "अनुपालन किया गया",
-  "Module": "मॉड्यूल",
-  "This module is available in subsequent build phases.":
-    "यह मॉड्यूल आगामी निर्माण चरणों में उपलब्ध होगा।",
 
-  "AREA NOTIFIED": "अधिसूचित क्षेत्र",
-  "AREA ACQUIRED": "अधिग्रहित क्षेत्र",
-  "COMP. ASSESSED": "निर्धारित मुआवज़ा",
-  "COMP. PAID": "भुगतान किया गया मुआवज़ा",
-  "FAMILIES AFFECTED": "प्रभावित परिवार",
-  "R&R SETTLED": "R&R निपटान",
-
-  "Area Notified": "अधिसूचित क्षेत्र",
-  "Area Acquired": "अधिग्रहित क्षेत्र",
-  "Compensation Assessed": "निर्धारित मुआवज़ा",
-  "Compensation Paid": "भुगतान किया गया मुआवज़ा",
-  "Families Affected": "प्रभावित परिवार",
-  "R&R Settled": "R&R निपटान",
-
-  /* ============================================================
-     STATUTORY LIFECYCLE
-  ============================================================ */
-
-  "Section 11 Notification": "धारा 11 अधिसूचना",
-  "Sec 11 Notification": "धारा 11 अधिसूचना",
-
-  "Section 19 Declaration": "धारा 19 घोषणा",
-  "Sec 19 Declaration": "धारा 19 घोषणा",
-
-  "Section 23 Award": "धारा 23 पुरस्कार",
-  "Sec 23 Award": "धारा 23 पुरस्कार",
-
-  "Section 23 Award Declaration": "धारा 23 पुरस्कार घोषणा",
-
-  "PFMS Direct Benefit Transfer":
-    "PFMS प्रत्यक्ष लाभ अंतरण",
-
-  "Direct Benefit Transfer (DBT)":
-    "प्रत्यक्ष लाभ अंतरण (DBT)",
-
-  "Direct Benefit Transfer":
-    "प्रत्यक्ष लाभ अंतरण",
-
-  "DBT": "डीबीटी",
-
-  "Section 38 Possession": "धारा 38 भूमि कब्ज़ा",
-  "Sec 38 Possession": "धारा 38 भूमि कब्ज़ा",
-
-  "Section 38 Land Possession": "धारा 38 भूमि कब्ज़ा",
-
-  "R&R Settlement": "R&R निपटान",
-  "R&R Entitlements Settlement": "R&R अधिकार निपटान",
-  "Entitlements Settlement": "अधिकार निपटान",
-
-  "Award / Land Possession": "पुरस्कार / भूमि कब्ज़ा",
-  "Proposed Alignment": "प्रस्तावित संरेखण",
-  "Map Legend": "मानचित्र संकेत",
-
-  /* ============================================================
-     WORKFLOW / STATUS
-  ============================================================ */
-
-  "In Survey": "सर्वेक्षण में",
-  "Submitted": "जमा किया गया",
-  "Under Scrutiny": "जाँच के अधीन",
-  "Under Review": "समीक्षा के अधीन",
-  "Published": "प्रकाशित",
-  "Draft": "मसौदा",
-  "Settled": "निपटाया गया",
-  "Settlement": "निपटान",
-  "Possession": "कब्ज़ा",
-  "Award": "पुरस्कार",
-
-  "Processing DBT": "डीबीटी प्रक्रियाधीन",
-  "DBT प्रक्रिया में": "डीबीटी प्रक्रियाधीन",
-
-  "Disbursed": "वितरित",
-  "Disburse DBT": "डीबीटी वितरित करें",
-
-  "Pending": "लंबित",
-  "Pending Awards": "लंबित पुरस्कार",
-  "Pending DBT": "लंबित डीबीटी",
-
-  "In Progress": "प्रगति में",
-  "Completed": "पूर्ण",
-  "Approved": "स्वीकृत",
-  "Rejected": "अस्वीकृत",
-
-  /* ============================================================
-     ACTION BUTTONS
-  ============================================================ */
-
-  "New Proposal": "नया प्रस्ताव",
-  "New Award Draft": "नया पुरस्कार मसौदा",
-  "New Award": "नया पुरस्कार",
-
-  "Upload Document": "दस्तावेज़ अपलोड करें",
-  "Upload Documents": "दस्तावेज़ अपलोड करें",
-
-  "Generate New Report": "नई रिपोर्ट तैयार करें",
-
-  "Mark Resolved": "समाधान किया गया चिह्नित करें",
-  "Start Inquiry": "जाँच शुरू करें",
-  "Scrutinize": "जाँच करें",
-  "Approve": "स्वीकृत करें",
-  "Reject": "अस्वीकार करें",
-  "Publish": "प्रकाशित करें",
-  "Download": "डाउनलोड करें",
-  "Download करें": "डाउनलोड करें",
-  "Disburse": "वितरित करें",
-  "Save": "सहेजें",
-  "Cancel": "रद्द करें",
-  "Close": "बंद करें",
-  "Search": "खोजें",
-  "Filter": "फ़िल्टर",
-  "View": "देखें",
-  "Edit": "संपादित करें",
-  "Delete": "हटाएँ",
-  "Actions": "कार्यवाही",
-  "Action": "कार्यवाही",
-
-  /* ============================================================
-     PROPOSALS
-  ============================================================ */
-
-  "Project Proposal": "परियोजना प्रस्ताव",
+  Actions: "कार्रवाई",
+  Action: "कार्रवाई",
+  Status: "स्थिति",
+  Location: "स्थान",
+  Project: "परियोजना",
+  Projects: "परियोजनाएँ",
   "Project Name": "परियोजना का नाम",
   "Reference ID": "संदर्भ आईडी",
-  "Proposal ID": "प्रस्ताव आईडी",
-  "Ministry": "मंत्रालय",
-  "Location": "स्थान",
-  "Area": "क्षेत्र",
-  "Area (Hectares)": "क्षेत्रफल (हेक्टेयर)",
-  "Area Notified": "अधिसूचित क्षेत्र",
-  "Area Acquired": "अधिग्रहित क्षेत्र",
+  "Tracking ID": "ट्रैकिंग आईडी",
 
-  "Ministry of Road Transport & Highways":
-    "सड़क परिवहन एवं राजमार्ग मंत्रालय",
+  Search: "खोजें",
+  Filter: "फ़िल्टर",
+  Filters: "फ़िल्टर",
+  Apply: "लागू करें",
+  Reset: "रीसेट",
+  Close: "बंद करें",
+  Cancel: "रद्द करें",
+  Save: "सहेजें",
+  Submit: "जमा करें",
+  Edit: "संपादित करें",
+  Delete: "हटाएँ",
+  View: "देखें",
+  Download: "डाउनलोड",
+  Upload: "अपलोड",
 
-  "Ministry of Railways": "रेल मंत्रालय",
-  "Ministry of Jal Shakti": "जल शक्ति मंत्रालय",
+  Approve: "स्वीकृत करें",
+  Reject: "अस्वीकार करें",
+  Publish: "प्रकाशित करें",
+  Scrutinize: "जाँच करें",
+  "Start Inquiry": "जाँच शुरू करें",
+  "Mark Resolved": "समाधान किया गया चिह्नित करें",
 
-  "Road Transport and Highways Ministry":
-    "सड़क परिवहन एवं राजमार्ग मंत्रालय",
+  /* =========================
+     SIDEBAR
+  ========================= */
 
-  "Department of Land Resources":
-    "भूमि संसाधन विभाग",
+  Proposals: "प्रस्ताव",
+  Compensation: "मुआवज़ा",
+  Documents: "दस्तावेज़",
+  Awards: "पुरस्कार",
+  Reports: "रिपोर्ट",
+  Grievance: "शिकायत",
+  "GIS Map": "जीआईएस मानचित्र",
+  "R&R": "R&R",
 
-  "Government of India":
-    "भारत सरकार",
+  /* =========================
+     PROPOSALS
+  ========================= */
 
-  /* ============================================================
-     RISK
-  ============================================================ */
+  "Land Acquisition Proposals": "भूमि अधिग्रहण प्रस्ताव",
+  "New Proposal": "नया प्रस्ताव",
+  "Project Proposals": "परियोजना प्रस्ताव",
+  "Submitted": "जमा किया गया",
+  "Under Scrutiny": "जाँच के अधीन",
+  "In Survey": "सर्वेक्षण में",
+  "New Proposal Draft": "नए प्रस्ताव का मसौदा",
 
-  "Delay Risk": "विलंब जोखिम",
-  "Risk": "जोखिम",
-  "High": "उच्च",
-  "Medium": "मध्यम",
-  "Low": "कम",
+  "Sec 11 Notification": "धारा 11 अधिसूचना",
+  "Section 11 Notification": "धारा 11 अधिसूचना",
+  "Section 11": "धारा 11",
+  "Sec 19 Declaration": "धारा 19 घोषणा",
+  "Section 19 Declaration": "धारा 19 घोषणा",
+  "Sec 23 Award": "धारा 23 पुरस्कार",
+  "Section 23 Award": "धारा 23 पुरस्कार",
+  Possession: "कब्ज़ा",
+  "Section 38 Possession": "धारा 38 भूमि कब्ज़ा",
+  "Section 38 Land Possession": "धारा 38 भूमि कब्ज़ा",
 
-  "High Risk": "उच्च जोखिम",
-  "Medium Risk": "मध्यम जोखिम",
-  "Low Risk": "कम जोखिम",
+  /* =========================
+     COMPENSATION
+  ========================= */
 
-  "Critical": "गंभीर",
-  "Warning": "चेतावनी",
-  "WARNING": "चेतावनी",
-  "INFO": "जानकारी",
+  "Compensation Management": "मुआवज़ा प्रबंधन",
+  "Compensation Assessment": "मुआवज़ा आकलन",
+  "Compensation Assessment": "मुआवज़ा आकलन",
+  Beneficiaries: "लाभार्थी",
+  Settled: "निपटाया गया",
+  "Disburse DBT": "DBT वितरित करें",
+  Disbursement: "वितरण",
 
-  /* ============================================================
+  "Direct Benefit Transfer (DBT)": "प्रत्यक्ष लाभ अंतरण (DBT)",
+  "PFMS Direct Benefit Transfer": "PFMS प्रत्यक्ष लाभ अंतरण",
+  "Processing DBT": "DBT प्रक्रिया में",
+
+  /* =========================
      AWARDS
-  ============================================================ */
+  ========================= */
 
   "Award Management": "पुरस्कार प्रबंधन",
   "Draft, review and publish land acquisition awards":
-    "भूमि अधिग्रहण पुरस्कारों का मसौदा, समीक्षा और प्रकाशन करें",
+    "भूमि अधिग्रहण पुरस्कारों का मसौदा तैयार करें, समीक्षा करें और प्रकाशित करें",
 
+  "New Award Draft": "नए पुरस्कार का मसौदा",
   "Award Register": "पुरस्कार रजिस्टर",
   "All award drafts and published awards":
     "सभी पुरस्कार मसौदे और प्रकाशित पुरस्कार",
 
   "Award ID": "पुरस्कार आईडी",
-  "Beneficiaries": "लाभार्थी",
-  "Authority": "प्राधिकरण",
-  "Amount": "राशि",
   "Date": "दिनांक",
-  "Status": "स्थिति",
+  Amount: "राशि",
+  Authority: "प्राधिकरण",
 
-  "4 records": "4 रिकॉर्ड",
+  Award: "पुरस्कार",
+  "Under Review": "समीक्षा के अधीन",
+  Draft: "मसौदा",
+  Published: "प्रकाशित",
+  Review: "समीक्षा",
 
-  /* ============================================================
-     COMPENSATION
-  ============================================================ */
-
-  "Compensation Register": "मुआवज़ा रजिस्टर",
-  "Compensation & Payment": "मुआवज़ा एवं भुगतान",
-
-  "Market Value": "बाज़ार मूल्य",
-  "Solatium (100%)": "सोलैटियम (100%)",
-  "Total Assessed Amount": "कुल निर्धारित राशि",
-  "Disbursed Amount (PFMS)": "वितरित राशि (PFMS)",
-
-  "Paid": "भुगतान किया गया",
-  "Payment": "भुगतान",
-  "Payment Status": "भुगतान स्थिति",
-
-  "DBT प्रक्रिया में": "DBT प्रक्रिया में",
-
-  /* ============================================================
+  /* =========================
      R&R
-  ============================================================ */
+  ========================= */
 
-  "Manage affected families and track statutory entitlements under RFCTLARR Act.":
-    "प्रभावित परिवारों का प्रबंधन करें और RFCTLARR अधिनियम के अंतर्गत वैधानिक अधिकारों की निगरानी करें।",
+  "R&R Settlement": "R&R निपटान",
+  "R&R Entitlements Settlement": "R&R अधिकार निपटान",
 
   "Family Head": "परिवार प्रमुख",
-  "Category": "श्रेणी",
-  "Displacement": "विस्थापन",
-  "Entitlements": "अधिकार",
-  "Housing": "आवास",
-  "Annuity": "वार्षिकी",
-  "Employment": "रोज़गार",
+  Category: "श्रेणी",
+  Displacement: "विस्थापन",
+  Housing: "आवास",
+  Annuity: "वार्षिकी",
+  Employment: "रोज़गार",
+  Settlement: "निपटान",
 
-  "Displaced": "विस्थापित",
-  "Affected Not Displaced": "प्रभावित, विस्थापित नहीं",
-  "Tenant": "किरायेदार",
-  "Owner": "स्वामी",
-  "Agricultural Labourer": "कृषि मज़दूर",
+  "Settle Claim": "दावा निपटाएँ",
 
-  /* ============================================================
+  /* =========================
      DOCUMENTS
-  ============================================================ */
+  ========================= */
 
-  "Document Repository": "दस्तावेज़ भंडार",
-
-  "SHA-256 digital signatures, tamper-evident and timestamped evidence document repository.":
-    "SHA-256 डिजिटल हस्ताक्षर, छेड़छाड़-रोधी और समय-मुद्रित साक्ष्य दस्तावेज़ भंडार।",
-
-  "Title": "शीर्षक",
-  "Type": "प्रकार",
-  "Version": "संस्करण",
+  "Upload Document": "दस्तावेज़ अपलोड करें",
+  "Document Type": "दस्तावेज़ प्रकार",
   "Uploaded By": "अपलोड करने वाला",
-  "Uploaded Date": "अपलोड दिनांक",
-  "Date": "दिनांक",
-  "Checksum (SHA-256)": "चेकसम (SHA-256)",
-  "Verified": "सत्यापित",
-  "Signature Pending": "हस्ताक्षर लंबित",
+  Survey: "सर्वेक्षण",
+  Legal: "कानूनी",
+  Report: "रिपोर्ट",
+  Gazette: "राजपत्र",
+  "Field Surveyor": "क्षेत्र सर्वेक्षक",
+  "SHA-256": "SHA-256",
 
-  "Survey": "सर्वेक्षण",
-  "Legal": "कानूनी",
-  "Report": "रिपोर्ट",
-  "Gazette": "राजपत्र",
-
-  /* ============================================================
+  /* =========================
      REPORTS
-  ============================================================ */
+  ========================= */
 
-  "MIS & Statutory Report": "MIS एवं वैधानिक रिपोर्ट",
+  "MIS & Statutory Reports": "MIS एवं वैधानिक रिपोर्ट",
+  "MIS & Statutory रिपोर्ट": "MIS एवं वैधानिक रिपोर्ट",
 
-  "Generate and maintain statutory land acquisition and DBT financial reports.":
-    "वैधानिक भूमि अधिग्रहण एवं DBT वित्तीय रिपोर्ट तैयार और प्रबंधित करें।",
-
-  "Generate and maintain statutory land acquisition and DBT financial":
-    "वैधानिक भूमि अधिग्रहण एवं DBT वित्तीय",
-
-  "Generate": "तैयार करें",
-  "Recent MIS Records": "हाल के MIS रिकॉर्ड",
-
+  "Generate New Report": "नई रिपोर्ट बनाएँ",
+  "Recent MIS Records": "हाल की MIS रिपोर्ट",
   "REPORT ID": "रिपोर्ट आईडी",
-  "Generated Date": "तैयार दिनांक",
-  "Size / Format": "आकार / प्रारूप",
-
-  "TOTAL REPORTS GENERATED": "कुल तैयार रिपोर्ट",
   "AUTOMATED MIS CHECKS": "स्वचालित MIS जाँच",
-  "NEXT SCHEDULED STATE REVIEW": "अगली निर्धारित राज्य समीक्षा",
+  "SCHEDULED STATE REVIEW": "निर्धारित राज्य समीक्षा",
 
-  "Progress": "प्रगति",
-  "Financial": "वित्तीय",
-  "Social": "सामाजिक",
+  "Total Reports": "कुल रिपोर्ट",
+  Generated: "जनरेट की गई",
+  Progress: "प्रगति",
 
-  "Compliance": "अनुपालन",
-  "Compliance rate": "अनुपालन दर",
-  "Days": "दिन",
-
-  /* ============================================================
+  /* =========================
      GRIEVANCE
-  ============================================================ */
+  ========================= */
 
-  "Grievance Redressal": "शिकायत निवारण",
-
-  "Track and resolve complaints from affected families and stakeholders.":
-    "प्रभावित परिवारों और हितधारकों की शिकायतों की निगरानी एवं समाधान करें।",
-
-  "Track and resolve complaints":
-    "शिकायतों की निगरानी एवं समाधान करें",
-
+  "Grievance Management": "शिकायत प्रबंधन",
+  "AVG. RESOLUTION": "औसत समाधान",
   "Tracking ID": "ट्रैकिंग आईडी",
-  "Complaint": "शिकायत",
-  "Complainant": "शिकायतकर्ता",
-  "Submission Date": "जमा दिनांक",
-  "Priority": "प्राथमिकता",
-
+  Complainant: "शिकायतकर्ता",
+  "Submission Date": "जमा करने की तारीख",
+  Priority: "प्राथमिकता",
   "Measurement Dispute": "माप संबंधी विवाद",
   "R&R Eligibility": "R&R पात्रता",
-  "Compensation Assessment": "मुआवज़ा निर्धारण",
+  "Compensation Assessment": "मुआवज़ा आकलन",
+  Redressed: "समाधान किया गया",
 
-  "Open": "खुली",
-  "Resolved": "समाधान किया गया",
+  /* =========================
+     ALERTS
+  ========================= */
 
-  "Resolution": "समाधान",
-  "AVG. RESOLUTION": "औसत समाधान",
-  "14 Days": "14 दिन",
+  "System Notifications & Alerts":
+    "सिस्टम सूचनाएँ एवं अलर्ट",
 
-  /* ============================================================
-     NOTIFICATIONS
-  ============================================================ */
+  "System सूचनाएँ & अधिसूचनाएँ":
+    "सिस्टम सूचनाएँ एवं अधिसूचनाएँ",
 
-  "System Notifications & Alerts": "सिस्टम सूचनाएँ एवं अधिसूचनाएँ",
+  "View Alerts": "अलर्ट देखें",
+  "Lapse Risk": "समाप्ति जोखिम",
 
-  "Role-scoped automated alerts for SLA tracking, approvals, and lapse-risks.":
-    "SLA निगरानी, अनुमोदन और समय-सीमा जोखिमों के लिए भूमिका-आधारित स्वचालित सूचनाएँ।",
+  /* =========================
+     DASHBOARD
+  ========================= */
 
-  "Lapse Risk": "समय-सीमा जोखिम",
-  "Lapse जोखिम": "समय-सीमा जोखिम",
+  "Workflow Tracker": "कार्यप्रवाह ट्रैकर",
+  "Predictive Risk": "पूर्वानुमानित जोखिम",
 
-  "SLA Breach": "SLA उल्लंघन",
+  "Section 11 Notification": "धारा 11 अधिसूचना",
+  "Section 19 Declaration": "धारा 19 घोषणा",
+  "Section 23 Award": "धारा 23 पुरस्कार",
+  "Section 38 Possession": "धारा 38 भूमि कब्ज़ा",
 
-  "Approval Pending": "अनुमोदन लंबित",
+  "R&R Entitlements Settlement":
+    "R&R अधिकार निपटान",
 
-  "Section 24(2) lapse risk":
-    "धारा 24(2) समय-सीमा जोखिम",
+  "R&R Settlement":
+    "R&R निपटान",
 
-  "is approaching statutory threshold with pending possession":
-    "लंबित कब्ज़े के साथ वैधानिक सीमा के निकट है",
+  /* =========================
+     USER / SESSION
+  ========================= */
 
-  "delayed by": "में देरी हुई",
-  "days": "दिन",
+  "Active Session": "सक्रिय सत्र",
+  "Guest User": "अतिथि उपयोगकर्ता",
+  "Sign Out": "साइन आउट",
+  "Switch Role or Sign In":
+    "भूमिका बदलें या साइन इन करें",
 
-  "beyond SLA clearance deadline":
-    "SLA स्वीकृति की समय-सीमा से अधिक",
+  /* =========================
+     MODULE
+  ========================= */
 
-  "submitted compensation award":
-    "मुआवज़ा पुरस्कार प्रस्तुत किया",
+  Module: "मॉड्यूल",
 
-  "for": "के लिए",
+  "This module is available in subsequent build phases.":
+    "यह मॉड्यूल आगामी निर्माण चरणों में उपलब्ध होगा।",
 
-  /* ============================================================
-     COMMON MIXED PHRASES FROM NOTIFICATIONS
-  ============================================================ */
+  /* =========================
+     COMMON PHRASES
+  ========================= */
 
-  "Lapse Risk:": "समय-सीमा जोखिम:",
-  "SLA Breach:": "SLA उल्लंघन:",
-  "Approval Pending:": "अनुमोदन लंबित:",
+  "Track and manage land acquisition proposals across all ministries.":
+    "सभी मंत्रालयों में भूमि अधिग्रहण प्रस्तावों को ट्रैक और प्रबंधित करें।",
 
-  /* ============================================================
-     MAP
-  ============================================================ */
+  "Manage land acquisition proposals across all ministries.":
+    "सभी मंत्रालयों में भूमि अधिग्रहण प्रस्तावों का प्रबंधन करें।",
 
-  "IN India View": "भारत दृश्य",
-  "India": "भारत",
-  "Zoom In": "ज़ूम इन",
-  "Zoom Out": "ज़ूम आउट",
-  "Reset View": "दृश्य रीसेट करें",
+  "Live GIS Data":
+    "लाइव जीआईएस डेटा",
 
-  /* ============================================================
-     DATE / TIME
-  ============================================================ */
+  "Parcel Visualization":
+    "भूमि पार्सल दृश्यांकन",
 
-  "Today": "आज",
-  "Yesterday": "कल",
-  "Tomorrow": "कल",
-  "Monday": "सोमवार",
-  "Tuesday": "मंगलवार",
-  "Wednesday": "बुधवार",
-  "Thursday": "गुरुवार",
-  "Friday": "शुक्रवार",
-  "Saturday": "शनिवार",
-  "Sunday": "रविवार",
+  "Proposed Alignment":
+    "प्रस्तावित संरेखण",
 
-  "January": "जनवरी",
-  "February": "फ़रवरी",
-  "March": "मार्च",
-  "April": "अप्रैल",
-  "May": "मई",
-  "June": "जून",
-  "July": "जुलाई",
-  "August": "अगस्त",
-  "September": "सितंबर",
-  "October": "अक्टूबर",
-  "November": "नवंबर",
-  "December": "दिसंबर",
+  "Parcel Details":
+    "पार्सल विवरण",
+
+  /* =========================
+     STATUS
+  ========================= */
+
+  Pending: "लंबित",
+  Approved: "स्वीकृत",
+  Disputed: "विवादित",
+  Disbursed: "वितरित",
+  "In Progress": "प्रगति में",
+  Processing: "प्रक्रिया में",
+  Completed: "पूर्ण",
 };
 
-/**
- * Longer phrases must be replaced first.
- * This prevents:
- *
- * "Section 38 Land Possession"
- *
- * from becoming partially translated before the
- * complete phrase gets translated.
- */
-const SORTED_KEYS = Object.keys(TRANSLATIONS).sort(
-  (a, b) => b.length - a.length
+/*
+|--------------------------------------------------------------------------
+| DO NOT TRANSLATE THESE
+|--------------------------------------------------------------------------
+| Project IDs, ULPIN, SHA hashes, MoRTH etc. should remain intact.
+|--------------------------------------------------------------------------
+*/
+
+const ignoredTags = new Set([
+  "SCRIPT",
+  "STYLE",
+  "NOSCRIPT",
+  "CODE",
+  "PRE",
+  "TEXTAREA",
+]);
+
+const originalText = new WeakMap<Text, string>();
+
+/*
+|--------------------------------------------------------------------------
+| SORT LONGEST FIRST
+|--------------------------------------------------------------------------
+| Example:
+| "Section 11 Notification" should be checked before "Section 11".
+|--------------------------------------------------------------------------
+*/
+
+const sortedTranslations = Object.entries(translations).sort(
+  ([a], [b]) => b.length - a.length
 );
 
-const escapeRegExp = (value: string) =>
-  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/*
+|--------------------------------------------------------------------------
+| SAFE TEXT TRANSLATION
+|--------------------------------------------------------------------------
+*/
 
 function translateText(text: string): string {
-  if (!text.trim()) return text;
+  const trimmed = text.trim();
+
+  if (!trimmed) {
+    return text;
+  }
+
+  /*
+   * Exact match first.
+   * This prevents project names / sentences from becoming broken.
+   */
+
+  const exact = translations[trimmed];
+
+  if (exact) {
+    return text.replace(trimmed, exact);
+  }
 
   let result = text;
 
-  for (const english of SORTED_KEYS) {
-    const hindi = TRANSLATIONS[english];
+  /*
+   * Only replace complete words/phrases.
+   *
+   * This prevents:
+   * Highway -> उच्चway
+   *
+   * because "highway" is treated as a complete word.
+   */
+
+  for (const [english, hindi] of sortedTranslations) {
+    if (
+      english.length < 3 ||
+      english.includes(" ")
+    ) {
+      continue;
+    }
+
+    const escaped = english.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&"
+    );
 
     const regex = new RegExp(
-      escapeRegExp(english),
+      `(^|[^A-Za-z0-9])${escaped}(?=$|[^A-Za-z0-9])`,
       "gi"
     );
 
-    result = result.replace(regex, hindi);
+    result = result.replace(
+      regex,
+      `$1${hindi}`
+    );
   }
 
   return result;
 }
 
-function isTranslatableTextNode(node: Node): boolean {
-  const parent = node.parentElement;
+/*
+|--------------------------------------------------------------------------
+| TRANSLATE DOM
+|--------------------------------------------------------------------------
+*/
 
-  if (!parent) return false;
+function translatePageToHindi() {
+  const root = document.body;
 
-  const tag = parent.tagName;
-
-  if (
-    tag === "SCRIPT" ||
-    tag === "STYLE" ||
-    tag === "NOSCRIPT" ||
-    tag === "CODE"
-  ) {
-    return false;
+  if (!root) {
+    return;
   }
 
-  return true;
+  const walker = document.createTreeWalker(
+    root,
+    NodeFilter.SHOW_TEXT
+  );
+
+  const textNodes: Text[] = [];
+
+  let current: Node | null;
+
+  while ((current = walker.nextNode())) {
+    const textNode = current as Text;
+
+    const parent = textNode.parentElement;
+
+    if (!parent) {
+      continue;
+    }
+
+    if (ignoredTags.has(parent.tagName)) {
+      continue;
+    }
+
+    if (
+      parent.closest(
+        "[data-no-translate='true']"
+      )
+    ) {
+      continue;
+    }
+
+    textNodes.push(textNode);
+  }
+
+  textNodes.forEach((node) => {
+    if (!originalText.has(node)) {
+      originalText.set(node, node.nodeValue || "");
+    }
+
+    const original =
+      originalText.get(node) || "";
+
+    const translated =
+      translateText(original);
+
+    if (node.nodeValue !== translated) {
+      node.nodeValue = translated;
+    }
+  });
+}
+
+/*
+|--------------------------------------------------------------------------
+| RESTORE ENGLISH
+|--------------------------------------------------------------------------
+*/
+
+function restoreEnglish() {
+  const root = document.body;
+
+  if (!root) {
+    return;
+  }
+
+  const walker = document.createTreeWalker(
+    root,
+    NodeFilter.SHOW_TEXT
+  );
+
+  let current: Node | null;
+
+  while ((current = walker.nextNode())) {
+    const textNode = current as Text;
+
+    const original =
+      originalText.get(textNode);
+
+    if (original !== undefined) {
+      if (textNode.nodeValue !== original) {
+        textNode.nodeValue = original;
+      }
+    }
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| COMPONENT
+|--------------------------------------------------------------------------
+*/
+
+interface GlobalHindiTranslatorProps {
+  language: Language;
 }
 
 export default function GlobalHindiTranslator({
   language,
-}: Props) {
+}: GlobalHindiTranslatorProps) {
   useEffect(() => {
-    if (typeof document === "undefined") return;
+    let observer: MutationObserver | null = null;
 
-    /**
-     * Store the original English text.
-     * This is important because the old translator
-     * could not restore English after switching back.
-     */
-    const originalTexts = new WeakMap<Text, string>();
-
-    const originalAttributes = new WeakMap<
-      HTMLElement,
-      {
-        placeholder?: string;
-        title?: string;
-        ariaLabel?: string;
-      }
-    >();
-
-    let isApplying = false;
-    let timer: number | undefined;
-
-    const saveOriginalText = (node: Text) => {
-      if (!originalTexts.has(node)) {
-        originalTexts.set(node, node.nodeValue ?? "");
-      }
-    };
-
-    const translateNode = (node: Text) => {
-      if (!isTranslatableTextNode(node)) return;
-
-      saveOriginalText(node);
-
-      const original = originalTexts.get(node) ?? "";
-
+    const runTranslation = () => {
       if (language === "hi") {
-        const translated = translateText(original);
-
-        if (node.nodeValue !== translated) {
-          node.nodeValue = translated;
-        }
+        translatePageToHindi();
       } else {
-        if (node.nodeValue !== original) {
-          node.nodeValue = original;
-        }
+        restoreEnglish();
       }
     };
 
-    const translateAttributes = (element: HTMLElement) => {
-      if (!originalAttributes.has(element)) {
-        originalAttributes.set(element, {
-          placeholder: element.getAttribute("placeholder") ?? undefined,
-          title: element.getAttribute("title") ?? undefined,
-          ariaLabel: element.getAttribute("aria-label") ?? undefined,
-        });
-      }
+    /*
+     * Initial translation
+     */
 
-      const original = originalAttributes.get(element);
+    runTranslation();
 
-      if (!original) return;
+    /*
+     * React changes the DOM dynamically.
+     * MutationObserver handles new content.
+     */
 
+    observer = new MutationObserver(() => {
       if (language === "hi") {
-        if (original.placeholder !== undefined) {
-          element.setAttribute(
-            "placeholder",
-            translateText(original.placeholder)
-          );
-        }
-
-        if (original.title !== undefined) {
-          element.setAttribute(
-            "title",
-            translateText(original.title)
-          );
-        }
-
-        if (original.ariaLabel !== undefined) {
-          element.setAttribute(
-            "aria-label",
-            translateText(original.ariaLabel)
-          );
-        }
-      } else {
-        if (original.placeholder !== undefined) {
-          element.setAttribute(
-            "placeholder",
-            original.placeholder
-          );
-        }
-
-        if (original.title !== undefined) {
-          element.setAttribute("title", original.title);
-        }
-
-        if (original.ariaLabel !== undefined) {
-          element.setAttribute(
-            "aria-label",
-            original.ariaLabel
-          );
-        }
-      }
-    };
-
-    const translatePage = () => {
-      if (isApplying) return;
-
-      isApplying = true;
-
-      try {
-        const walker = document.createTreeWalker(
-          document.body,
-          NodeFilter.SHOW_TEXT
-        );
-
-        const textNodes: Text[] = [];
-
-        let current = walker.nextNode();
-
-        while (current) {
-          textNodes.push(current as Text);
-          current = walker.nextNode();
-        }
-
-        for (const node of textNodes) {
-          translateNode(node);
-        }
-
-        const elements = document.body.querySelectorAll<HTMLElement>(
-          "input, textarea, button, [title], [aria-label]"
-        );
-
-        elements.forEach((element) => {
-          translateAttributes(element);
-        });
-      } finally {
-        isApplying = false;
-      }
-    };
-
-    const scheduleTranslation = () => {
-      if (timer) {
-        window.clearTimeout(timer);
-      }
-
-      timer = window.setTimeout(() => {
-        translatePage();
-      }, 30);
-    };
-
-    /**
-     * Initial translation.
-     */
-    translatePage();
-
-    /**
-     * Watch dynamically rendered React content.
-     *
-     * This is important for:
-     * - Notifications
-     * - API data
-     * - Tables
-     * - Modals
-     * - New rows
-     * - Dashboard updates
-     */
-    const observer = new MutationObserver(() => {
-      if (!isApplying) {
-        scheduleTranslation();
+        translatePageToHindi();
       }
     });
 
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: [
-        "placeholder",
-        "title",
-        "aria-label",
-      ],
     });
 
     return () => {
-      observer.disconnect();
-
-      if (timer) {
-        window.clearTimeout(timer);
-      }
+      observer?.disconnect();
     };
   }, [language]);
 

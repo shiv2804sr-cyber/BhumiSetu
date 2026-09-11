@@ -16,6 +16,7 @@ type AwardRecord = {
   projectId: string;
   projectName: string;
   date: string;
+  areaRequired?: number;
   totalAmount: number;
   beneficiariesCount: number;
   status: string;
@@ -205,13 +206,19 @@ export function Awards() {
   const [isSubmitting, setIsSubmitting] =
     useState(false);
 
+  const [publishingAwardId, setPublishingAwardId] =
+    useState<string | null>(null);
+
   const [errorMessage, setErrorMessage] =
     useState("");
 
   const [successMessage, setSuccessMessage] =
     useState("");
 
-  /* Draft form */
+  /* =========================================================
+     DRAFT FORM
+     ========================================================= */
+
   const [draftState, setDraftState] =
     useState("Haryana");
 
@@ -260,12 +267,6 @@ export function Awards() {
       setLoading(true);
       setErrorMessage("");
 
-      /*
-       * IMPORTANT:
-       * api.awards.getAll() automatically sends:
-       *
-       * Authorization: Bearer <bhumisetu_token>
-       */
       const data = await api.awards.getAll();
 
       setAwards(
@@ -293,7 +294,7 @@ export function Awards() {
   }, []);
 
   /* =========================================================
-     OPEN MODAL
+     OPEN DRAFT MODAL
      ========================================================= */
 
   const openDraftModal = () => {
@@ -301,6 +302,7 @@ export function Awards() {
     setSuccessMessage("");
 
     const state = "Haryana";
+
     const district =
       stateDistricts[state]?.[0] || "Nuh";
 
@@ -348,6 +350,8 @@ export function Awards() {
     setDraftProjectId(
       firstProject?.id || ""
     );
+
+    setErrorMessage("");
   };
 
   /* =========================================================
@@ -369,6 +373,8 @@ export function Awards() {
     setDraftProjectId(
       firstProject?.id || ""
     );
+
+    setErrorMessage("");
   };
 
   /* =========================================================
@@ -379,6 +385,7 @@ export function Awards() {
     projectId: string
   ) => {
     setDraftProjectId(projectId);
+    setErrorMessage("");
   };
 
   /* =========================================================
@@ -395,9 +402,25 @@ export function Awards() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    /* -------------------------
-       VALIDATION
-       ------------------------- */
+    /* =====================================================
+       AUTH CHECK
+       ===================================================== */
+
+    const token =
+      localStorage.getItem(
+        "bhumisetu_token"
+      );
+
+    if (!token) {
+      setErrorMessage(
+        "Authentication token not found. Please login again."
+      );
+      return;
+    }
+
+    /* =====================================================
+       BASIC VALIDATION
+       ===================================================== */
 
     if (!draftState) {
       setErrorMessage(
@@ -420,9 +443,13 @@ export function Awards() {
       return;
     }
 
+    const amount =
+      Number(draftAmount);
+
     if (
       !draftAmount ||
-      Number(draftAmount) <= 0
+      !Number.isFinite(amount) ||
+      amount <= 0
     ) {
       setErrorMessage(
         "Please enter a valid award amount."
@@ -430,12 +457,17 @@ export function Awards() {
       return;
     }
 
+    const beneficiaries =
+      Number(draftBeneficiaries);
+
     if (
       !draftBeneficiaries ||
-      Number(draftBeneficiaries) <= 0
+      !Number.isFinite(beneficiaries) ||
+      !Number.isInteger(beneficiaries) ||
+      beneficiaries <= 0
     ) {
       setErrorMessage(
-        "Please enter beneficiaries count."
+        "Please enter a valid beneficiaries count."
       );
       return;
     }
@@ -453,20 +485,44 @@ export function Awards() {
       return;
     }
 
+    /* =====================================================
+       AREA REQUIRED
+
+       BACKEND REQUIRES:
+       areaRequired: number
+
+       Demo project already contains:
+       estimatedArea
+
+       Example:
+       estimatedArea = 228
+       areaRequired = 228
+       ===================================================== */
+
+    const areaRequired =
+      Number(project.estimatedArea);
+
+    if (
+      !Number.isFinite(areaRequired) ||
+      areaRequired <= 0
+    ) {
+      setErrorMessage(
+        "Selected project does not have a valid estimated area."
+      );
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
-      /* =====================================================
+      /* ===================================================
          STEP 1
-         CHECK IF SAME PROJECT ALREADY EXISTS
-         ===================================================== */
+         CHECK EXISTING BACKEND PROJECT
+         =================================================== */
 
       let realProjectId = "";
 
       try {
-        /*
-         * Authenticated API call.
-         */
         const backendProjects =
           await api.projects.getAll({
             state: project.state,
@@ -479,7 +535,8 @@ export function Awards() {
                 (p: any) =>
                   p.projectName ===
                     project.projectName &&
-                  p.state === project.state &&
+                  p.state ===
+                    project.state &&
                   p.district ===
                     project.district
               )
@@ -490,29 +547,18 @@ export function Awards() {
             existingProject.id;
         }
       } catch (lookupError) {
-        /*
-         * If project lookup fails,
-         * we'll try to create the project.
-         */
         console.warn(
           "Project lookup warning:",
           lookupError
         );
       }
 
-      /* =====================================================
+      /* ===================================================
          STEP 2
          CREATE REAL PROJECT IF NEEDED
-         ===================================================== */
+         =================================================== */
 
       if (!realProjectId) {
-        /*
-         * IMPORTANT:
-         * This uses api.projects.create()
-         * instead of fetch().
-         *
-         * JWT is automatically injected by api.ts.
-         */
         const createdProject =
           await api.projects.create({
             projectName:
@@ -559,10 +605,6 @@ export function Awards() {
               project.ministry,
           });
 
-        /*
-         * api.ts already unwraps data.data
-         * if backend uses response wrapper.
-         */
         realProjectId =
           createdProject?.id ||
           createdProject?.project?.id ||
@@ -581,10 +623,10 @@ export function Awards() {
         }
       }
 
-      /* =====================================================
+      /* ===================================================
          STEP 3
-         CREATE AWARD
-         ===================================================== */
+         FINAL AWARD PAYLOAD
+         =================================================== */
 
       const awardPayload = {
         projectId:
@@ -598,11 +640,19 @@ export function Awards() {
             .toISOString()
             .split("T")[0],
 
+        /* IMPORTANT FIX */
+        areaRequired:
+          Number(
+            project.estimatedArea
+          ),
+
         totalAmount:
           Number(draftAmount),
 
         beneficiariesCount:
-          Number(draftBeneficiaries),
+          Number(
+            draftBeneficiaries
+          ),
 
         status: "Draft",
 
@@ -611,33 +661,104 @@ export function Awards() {
       };
 
       console.log(
-        "Creating Award Draft:",
+        "================================"
+      );
+
+      console.log(
+        "CREATING AWARD DRAFT"
+      );
+
+      console.log(
+        "FINAL PAYLOAD:",
         awardPayload
       );
 
-      /*
-       * IMPORTANT:
-       * Authenticated API call.
-       *
-       * api.awards.create()
-       * automatically adds:
-       *
-       * Authorization:
-       * Bearer <bhumisetu_token>
-       */
-      const createdAward =
-        await api.awards.create(
-          awardPayload
+      console.log(
+        "areaRequired:",
+        awardPayload.areaRequired,
+        typeof awardPayload.areaRequired
+      );
+
+      console.log(
+        "================================"
+      );
+
+      /* ===================================================
+         STEP 4
+         DIRECT AWARD API REQUEST
+
+         We intentionally use fetch here so that
+         areaRequired is guaranteed to be sent.
+         =================================================== */
+
+      const response =
+        await fetch(
+          "/api/v1/awards",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`,
+            },
+
+            body:
+              JSON.stringify(
+                awardPayload
+              ),
+          }
         );
+
+      /* ===================================================
+         READ RESPONSE
+         =================================================== */
+
+      const responseData =
+        await response
+          .json()
+          .catch(() => ({}));
+
+      console.log(
+        "Award API Response:",
+        responseData
+      );
+
+      /* ===================================================
+         HANDLE API ERROR
+         =================================================== */
+
+      if (!response.ok) {
+        const details =
+          responseData?.details
+            ? ` | Details: ${JSON.stringify(
+                responseData.details
+              )}`
+            : "";
+
+        throw new Error(
+          `${
+            responseData?.error ||
+            responseData?.message ||
+            `Award creation failed (${response.status})`
+          }${details}`
+        );
+      }
+
+      /* ===================================================
+         SUCCESS
+         =================================================== */
+
+      const createdAward =
+        responseData?.data ??
+        responseData;
 
       console.log(
         "Award Draft Created:",
         createdAward
       );
-
-      /* =====================================================
-         SUCCESS
-         ===================================================== */
 
       setSuccessMessage(
         "Award Draft created successfully!"
@@ -646,18 +767,14 @@ export function Awards() {
       setDraftAmount("");
       setDraftBeneficiaries("");
 
-      /*
-       * Refresh table.
-       */
       await loadAwards();
 
-      /*
-       * Close modal after short delay
-       * so user can see success message.
-       */
+      /* Close modal after success */
+
       setTimeout(() => {
         setIsDraftModalOpen(false);
         setSuccessMessage("");
+        setErrorMessage("");
       }, 900);
 
     } catch (error: any) {
@@ -682,13 +799,28 @@ export function Awards() {
   const handlePublish = async (
     awardId: string
   ) => {
+    if (publishingAwardId) return;
+
+    const token =
+      localStorage.getItem(
+        "bhumisetu_token"
+      );
+
+    if (!token) {
+      setErrorMessage(
+        "Authentication token not found. Please login again."
+      );
+      return;
+    }
+
     try {
       setErrorMessage("");
       setSuccessMessage("");
 
-      /*
-       * Authenticated API call.
-       */
+      setPublishingAwardId(
+        awardId
+      );
+
       await api.awards.publish(
         awardId
       );
@@ -713,6 +845,8 @@ export function Awards() {
         error?.message ||
           "Failed to publish award."
       );
+    } finally {
+      setPublishingAwardId(null);
     }
   };
 
@@ -737,7 +871,7 @@ export function Awards() {
   };
 
   /* =========================================================
-     STATUS
+     STATUS STYLE
      ========================================================= */
 
   const getStatusStyle = (
@@ -803,7 +937,7 @@ export function Awards() {
       </div>
 
       {/* ===================================================
-          SUCCESS
+          SUCCESS MESSAGE
           =================================================== */}
 
       {successMessage && (
@@ -819,7 +953,7 @@ export function Awards() {
       )}
 
       {/* ===================================================
-          ERROR
+          ERROR MESSAGE
           =================================================== */}
 
       {errorMessage &&
@@ -828,7 +962,7 @@ export function Awards() {
 
             <AlertCircle className="h-5 w-5" />
 
-            <span>
+            <span className="break-words">
               {errorMessage}
             </span>
 
@@ -910,6 +1044,10 @@ export function Awards() {
                   </th>
 
                   <th className="text-left px-6 py-4 font-semibold text-gray-600">
+                    Area
+                  </th>
+
+                  <th className="text-left px-6 py-4 font-semibold text-gray-600">
                     Amount
                   </th>
 
@@ -962,6 +1100,14 @@ export function Awards() {
                       {award.date || "-"}
                     </td>
 
+                    <td className="px-6 py-4 text-gray-700">
+                      {award.areaRequired
+                        ? `${Number(
+                            award.areaRequired
+                          ).toLocaleString("en-IN")} Ha`
+                        : "-"}
+                    </td>
+
                     <td className="px-6 py-4 font-semibold text-gray-800">
                       ₹
                       {Number(
@@ -997,21 +1143,44 @@ export function Awards() {
 
                         {award.status !==
                           "Published" && (
+
                           <button
                             type="button"
+                            disabled={
+                              publishingAwardId ===
+                              award.id
+                            }
                             onClick={() =>
                               handlePublish(
                                 award.id
                               )
                             }
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-forest-dark text-white text-xs font-semibold hover:bg-forest-light"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-forest-dark text-white text-xs font-semibold hover:bg-forest-light disabled:opacity-60 disabled:cursor-not-allowed"
                           >
-                            <Send className="h-3.5 w-3.5" />
-                            Publish
+
+                            {publishingAwardId ===
+                            award.id ? (
+
+                              <>
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                Publishing...
+                              </>
+
+                            ) : (
+
+                              <>
+                                <Send className="h-3.5 w-3.5" />
+                                Publish
+                              </>
+
+                            )}
+
                           </button>
+
                         )}
 
                         {award.awardNoticeUrl && (
+
                           <button
                             type="button"
                             onClick={() =>
@@ -1024,6 +1193,7 @@ export function Awards() {
                             <Download className="h-3.5 w-3.5" />
                             Download
                           </button>
+
                         )}
 
                       </div>
@@ -1088,29 +1258,35 @@ export function Awards() {
               className="p-6 space-y-5"
             >
 
-              {/* ERROR */}
+              {/* =================================================
+                  ERROR
+                  ================================================= */}
 
               {errorMessage && (
+
                 <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
 
                   <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
 
-                  <div>
+                  <div className="min-w-0">
 
                     <div className="font-semibold">
                       Unable to create award
                     </div>
 
-                    <div className="mt-1">
+                    <div className="mt-1 break-words">
                       {errorMessage}
                     </div>
 
                   </div>
 
                 </div>
+
               )}
 
-              {/* STATE + DISTRICT */}
+              {/* =================================================
+                  STATE + DISTRICT
+                  ================================================= */}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -1134,12 +1310,14 @@ export function Awards() {
                     {Object.keys(
                       stateDistricts
                     ).map((state) => (
+
                       <option
                         key={state}
                         value={state}
                       >
                         {state}
                       </option>
+
                     ))}
 
                   </select>
@@ -1165,12 +1343,14 @@ export function Awards() {
 
                     {districtsForDraft.map(
                       (district) => (
+
                         <option
                           key={district}
                           value={district}
                         >
                           {district}
                         </option>
+
                       )
                     )}
 
@@ -1180,7 +1360,9 @@ export function Awards() {
 
               </div>
 
-              {/* PROJECT */}
+              {/* =================================================
+                  PROJECT
+                  ================================================= */}
 
               <div>
 
@@ -1212,12 +1394,14 @@ export function Awards() {
 
                     projectsForDraft.map(
                       (project) => (
+
                         <option
                           key={project.id}
                           value={project.id}
                         >
                           {project.projectName}
                         </option>
+
                       )
                     )
 
@@ -1227,7 +1411,9 @@ export function Awards() {
 
               </div>
 
-              {/* PROJECT INFO */}
+              {/* =================================================
+                  PROJECT INFO
+                  ================================================= */}
 
               {selectedProject && (
 
@@ -1236,6 +1422,7 @@ export function Awards() {
                   <div className="grid grid-cols-2 gap-4">
 
                     <div>
+
                       <div className="text-xs text-gray-500">
                         State
                       </div>
@@ -1243,9 +1430,11 @@ export function Awards() {
                       <div className="text-sm font-semibold text-gray-800 mt-1">
                         {selectedProject.state}
                       </div>
+
                     </div>
 
                     <div>
+
                       <div className="text-xs text-gray-500">
                         District
                       </div>
@@ -1253,9 +1442,11 @@ export function Awards() {
                       <div className="text-sm font-semibold text-gray-800 mt-1">
                         {selectedProject.district}
                       </div>
+
                     </div>
 
                     <div>
+
                       <div className="text-xs text-gray-500">
                         Category
                       </div>
@@ -1263,9 +1454,11 @@ export function Awards() {
                       <div className="text-sm font-semibold text-gray-800 mt-1">
                         {selectedProject.category}
                       </div>
+
                     </div>
 
                     <div>
+
                       <div className="text-xs text-gray-500">
                         Estimated Area
                       </div>
@@ -1273,6 +1466,7 @@ export function Awards() {
                       <div className="text-sm font-semibold text-gray-800 mt-1">
                         {selectedProject.estimatedArea} Ha
                       </div>
+
                     </div>
 
                   </div>
@@ -1281,7 +1475,9 @@ export function Awards() {
 
               )}
 
-              {/* AMOUNT + BENEFICIARIES */}
+              {/* =================================================
+                  AMOUNT + BENEFICIARIES
+                  ================================================= */}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -1296,11 +1492,12 @@ export function Awards() {
                     min="1"
                     value={draftAmount}
                     disabled={isSubmitting}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setDraftAmount(
                         e.target.value
-                      )
-                    }
+                      );
+                      setErrorMessage("");
+                    }}
                     placeholder="e.g. 450000000"
                     className="w-full h-11 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-forest-light"
                   />
@@ -1316,13 +1513,15 @@ export function Awards() {
                   <input
                     type="number"
                     min="1"
+                    step="1"
                     value={draftBeneficiaries}
                     disabled={isSubmitting}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setDraftBeneficiaries(
                         e.target.value
-                      )
-                    }
+                      );
+                      setErrorMessage("");
+                    }}
                     placeholder="e.g. 152"
                     className="w-full h-11 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-forest-light"
                   />
@@ -1331,7 +1530,9 @@ export function Awards() {
 
               </div>
 
-              {/* AUTHORITY */}
+              {/* =================================================
+                  AUTHORITY
+                  ================================================= */}
 
               <div>
 
@@ -1348,7 +1549,31 @@ export function Awards() {
 
               </div>
 
-              {/* INFO */}
+              {/* =================================================
+                  AREA REQUIRED
+                  ================================================= */}
+
+              {selectedProject && (
+
+                <div className="rounded-md bg-green-50 border border-green-100 px-4 py-3 text-xs text-green-700">
+
+                  <strong>
+                    Area Required:
+                  </strong>{" "}
+
+                  {selectedProject.estimatedArea} Ha
+
+                  <span className="ml-1">
+                    — this value will be automatically sent to the award API.
+                  </span>
+
+                </div>
+
+              )}
+
+              {/* =================================================
+                  INFO
+                  ================================================= */}
 
               <div className="rounded-md bg-blue-50 border border-blue-100 px-4 py-3 text-xs text-blue-700">
 
@@ -1358,16 +1583,19 @@ export function Awards() {
 
               </div>
 
-              {/* BUTTONS */}
+              {/* =================================================
+                  BUTTONS
+                  ================================================= */}
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
 
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={() =>
-                    setIsDraftModalOpen(false)
-                  }
+                  onClick={() => {
+                    setIsDraftModalOpen(false);
+                    setErrorMessage("");
+                  }}
                   className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-md font-semibold hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
@@ -1375,20 +1603,29 @@ export function Awards() {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={
+                    isSubmitting ||
+                    !draftAmount ||
+                    !draftBeneficiaries ||
+                    !draftProjectId
+                  }
                   className="min-w-[190px] px-5 py-2.5 bg-forest-dark text-white rounded-md font-semibold hover:bg-forest-light disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
                 >
 
                   {isSubmitting ? (
+
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Creating...
                     </>
+
                   ) : (
+
                     <>
                       <CheckCircle2 className="h-4 w-4" />
                       Create Award Draft
                     </>
+
                   )}
 
                 </button>

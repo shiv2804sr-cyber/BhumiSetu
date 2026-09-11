@@ -16,6 +16,44 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
+/* =========================================================
+   COMMON ROLE TRANSLATION
+   Used by both Sidebar and TopNav
+   ========================================================= */
+
+const translateRole = (
+  role?: string,
+  language: "en" | "hi" = "en"
+) => {
+  if (!role) {
+    return language === "hi"
+      ? "अतिथि"
+      : "GUEST";
+  }
+
+  if (language === "en") {
+    return role.replace(/_/g, " ");
+  }
+
+  const roleTranslations: Record<string, string> = {
+    SUPER_ADMIN: "सुपर एडमिन",
+    CENTRAL_MINISTRY: "केंद्रीय मंत्रालय",
+    STATE_GOVERNMENT: "राज्य सरकार",
+    DISTRICT_AUTHORITY: "जिला प्राधिकरण",
+    PIA: "पीआईए",
+    FIELD_OFFICER: "फील्ड अधिकारी",
+    VIEWER: "दर्शक",
+    ADMIN: "एडमिन",
+    USER: "उपयोगकर्ता",
+  };
+
+  return roleTranslations[role] || role.replace(/_/g, " ");
+};
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
 export function Sidebar({
   activeTab,
   setActiveTab,
@@ -115,34 +153,13 @@ export function Sidebar({
     }
   };
 
-  const translateRole = (role?: string) => {
-    if (!role) {
-      return language === "hi"
-        ? "अतिथि"
-        : "GUEST";
-    }
-
-    if (language === "en") {
-      return role.replace(/_/g, " ");
-    }
-
-    const roleTranslations: Record<string, string> = {
-      SUPER_ADMIN: "सुपर एडमिन",
-      CENTRAL_MINISTRY: "केंद्रीय मंत्रालय",
-      STATE_GOVERNMENT: "राज्य सरकार",
-      DISTRICT_AUTHORITY: "जिला प्राधिकरण",
-      PIA: "पीआईए",
-      FIELD_OFFICER: "फील्ड अधिकारी",
-      VIEWER: "दर्शक",
-    };
-
-    return roleTranslations[role] || role.replace(/_/g, " ");
-  };
-
   return (
     <aside className="w-64 border-r border-neutral-stone/40 h-[calc(100vh-64px)] overflow-y-auto bg-forest-dark flex flex-col hidden md:flex">
 
-      {/* Navigation */}
+      {/* =====================================================
+          NAVIGATION
+          ===================================================== */}
+
       <nav className="p-4 space-y-1 flex-1">
         {tabs.map((tab) => (
           <button
@@ -167,7 +184,10 @@ export function Sidebar({
         ))}
       </nav>
 
-      {/* Active Session */}
+      {/* =====================================================
+          ACTIVE SESSION
+          ===================================================== */}
+
       <div className="p-4 border-t border-forest-light/30 bg-forest-light/30 backdrop-blur-sm">
 
         <div className="flex justify-between items-center mb-2">
@@ -179,16 +199,20 @@ export function Sidebar({
           </div>
 
           {/* Role Badge */}
+
           <span
             className={`text-[9px] uppercase font-bold tracking-wider px-2 py-1 border rounded-sm ${getRoleBadgeColor(
               user?.role
             )}`}
           >
-            {translateRole(user?.role)}
+            {translateRole(user?.role, language)}
           </span>
         </div>
 
-        {/* User Name */}
+        {/* ===================================================
+            USER NAME
+            =================================================== */}
+
         <div
           className="text-sm font-semibold text-cream-soft truncate"
           title={
@@ -204,7 +228,10 @@ export function Sidebar({
               : "Guest User")}
         </div>
 
-        {/* District / State */}
+        {/* ===================================================
+            DISTRICT / STATE
+            =================================================== */}
+
         {user && (
           <div className="text-xs text-secondary-text/80 truncate">
             {user.district
@@ -213,7 +240,10 @@ export function Sidebar({
           </div>
         )}
 
-        {/* Sign Out */}
+        {/* ===================================================
+            SIGN OUT
+            =================================================== */}
+
         {user && (
           <button
             onClick={logout}
@@ -230,6 +260,10 @@ export function Sidebar({
     </aside>
   );
 }
+
+/* =========================================================
+   TOP NAVIGATION
+   ========================================================= */
 
 export function TopNav({
   setActiveTab,
@@ -254,6 +288,10 @@ export function TopNav({
 
   const [unreadCount, setUnreadCount] = useState(3);
 
+  /* =======================================================
+     LOAD ALERT COUNT
+     ======================================================= */
+
   useEffect(() => {
     fetch("/api/v1/alerts")
       .then((res) => res.json())
@@ -270,6 +308,10 @@ export function TopNav({
       })
       .catch(() => {});
   }, []);
+
+  /* =======================================================
+     STATE / DISTRICT DATA
+     ======================================================= */
 
   const stateDistricts: Record<string, string[]> = {
     "All States": ["All Districts"],
@@ -371,9 +413,9 @@ export function TopNav({
     ],
   };
 
-  /* =========================================
-     Hindi translations for dropdown labels
-     ========================================= */
+  /* =======================================================
+     STATE TRANSLATION
+     ======================================================= */
 
   const translateState = (state: string) => {
     if (language === "en") {
@@ -397,6 +439,10 @@ export function TopNav({
 
     return stateTranslations[state] || state;
   };
+
+  /* =======================================================
+     DISTRICT TRANSLATION
+     ======================================================= */
 
   const translateDistrict = (district: string) => {
     if (language === "en") {
@@ -476,6 +522,10 @@ export function TopNav({
     return districtTranslations[district] || district;
   };
 
+  /* =======================================================
+     STATE CHANGE
+     ======================================================= */
+
   const handleStateChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -490,6 +540,10 @@ export function TopNav({
     }
   };
 
+  /* =======================================================
+     DISTRICT CHANGE
+     ======================================================= */
+
   const handleDistrictChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -501,13 +555,21 @@ export function TopNav({
   const currentDistricts =
     stateDistricts[selectedState] || ["All Districts"];
 
+  /* =======================================================
+     RENDER
+     ======================================================= */
+
   return (
     <header className="h-16 border-b border-neutral-stone/40 bg-survey-paper flex items-center justify-between px-6 shrink-0 shadow-sm">
 
-      {/* ================= LEFT SECTION ================= */}
+      {/* ===================================================
+          LEFT SECTION
+          =================================================== */}
+
       <div className="flex items-center gap-1">
 
         {/* BhoomiSetu Logo */}
+
         <div className="h-18 w-18 flex items-center justify-center shrink-0">
           <img
             src={bhumisetuLogo}
@@ -517,8 +579,10 @@ export function TopNav({
         </div>
 
         {/* Brand */}
+
         <div>
           <h1 className="text-lg leading-tight font-serif font-bold tracking-tight">
+
             <span className="text-forest-dark">
               Bhoomi
             </span>
@@ -526,6 +590,7 @@ export function TopNav({
             <span className="text-earth-accent">
               Setu
             </span>
+
           </h1>
 
           <div className="text-[9px] uppercase tracking-widest text-earth-accent/80 font-mono">
@@ -536,13 +601,20 @@ export function TopNav({
         </div>
       </div>
 
-      {/* ================= RIGHT SECTION ================= */}
+      {/* ===================================================
+          RIGHT SECTION
+          =================================================== */}
+
       <div className="flex items-center gap-6">
 
-        {/* ================= STATE & DISTRICT ================= */}
+        {/* =================================================
+            STATE & DISTRICT
+            ================================================= */}
+
         <div className="hidden md:flex items-center border border-neutral-stone/50 rounded-lg bg-cream-soft overflow-hidden text-sm shadow-sm">
 
           {/* State Selector */}
+
           <select
             value={selectedState}
             onChange={handleStateChange}
@@ -559,6 +631,7 @@ export function TopNav({
           </select>
 
           {/* District Selector */}
+
           <select
             value={selectedDistrict}
             onChange={handleDistrictChange}
@@ -575,10 +648,16 @@ export function TopNav({
           </select>
         </div>
 
-        {/* ================= RIGHT CONTROLS ================= */}
+        {/* =================================================
+            RIGHT CONTROLS
+            ================================================= */}
+
         <div className="flex items-center gap-5 border-l border-neutral-stone/40 pl-6">
 
-          {/* ================= LANGUAGE TOGGLE ================= */}
+          {/* =================================================
+              LANGUAGE TOGGLE
+              ================================================= */}
+
           <button
             onClick={() =>
               setLanguage(
@@ -600,7 +679,10 @@ export function TopNav({
             </span>
           </button>
 
-          {/* ================= NOTIFICATIONS ================= */}
+          {/* =================================================
+              NOTIFICATIONS
+              ================================================= */}
+
           <button
             onClick={() =>
               setActiveTab &&
@@ -622,7 +704,10 @@ export function TopNav({
             )}
           </button>
 
-          {/* ================= USER PROFILE ================= */}
+          {/* =================================================
+              USER PROFILE
+              ================================================= */}
+
           <button
             onClick={onOpenLogin}
             className="flex items-center gap-3 pl-3 pr-4 py-1.5 bg-cream-soft hover:bg-soft-green/30 border border-neutral-stone/40 rounded-lg text-registry-ink text-xs font-semibold transition-all shadow-sm hover:shadow-md hover:border-forest-light/40"
@@ -634,12 +719,16 @@ export function TopNav({
           >
 
             {/* User Icon */}
+
             <div className="h-7 w-7 rounded-full bg-forest-light/20 border border-forest-light/40 flex items-center justify-center text-forest-light">
               <User className="h-4 w-4" />
             </div>
 
             {/* User Details */}
+
             <div className="text-left hidden sm:block max-w-[120px] truncate">
+
+              {/* First Name */}
 
               <div className="font-semibold text-registry-ink leading-tight truncate">
                 {user?.fullName?.split(" ")[0] ||
@@ -648,9 +737,14 @@ export function TopNav({
                     : "Guest")}
               </div>
 
+              {/* Role */}
+
               <div className="text-[9px] text-earth-accent/70 uppercase font-mono truncate">
                 {user?.role
-                  ? translateRole(user.role)
+                  ? translateRole(
+                      user.role,
+                      language
+                    )
                   : language === "hi"
                     ? "अतिथि उपयोगकर्ता"
                     : "Guest User"}
